@@ -19,11 +19,11 @@ module load sra-tools
 
 SCRATCH_DIR='/global/scratch/users/chandlersutherland/e16'
 
-atac = 'SRR13920264 SRR13920265'
+atac='SRR13920264 SRR13920265'
 bisulfite='SRR12463972 SRR12463973'
 rna='SRR12454914 SRR12454925 SRR12454936 SRR12454937'
 
-atac_output='${SCRATCH_DIR}/${sample}/atac_fastq_files'
+atac_output=${SCRATCH_DIR}/${sample}/atac_fastq_files
 mkdir -p $atac_output
 
 for i in $atac
@@ -32,7 +32,7 @@ for i in $atac
 	echo $i 'bisulfite for sample' $sample 'complete'
 done 
 
-bs_output='${SCRATCH_DIR}/${sample}/bs_fastq_files'
+bs_output=${SCRATCH_DIR}/${sample}/bs_fastq_files
 mkdir -p $bs_output
 
 for i in $bisulfite
@@ -41,7 +41,7 @@ for i in $bisulfite
 	echo $i 'bisulfite for sample' $sample 'complete'
 done 
 
-rna_output='${SCRATCH_DIR}/${sample}/rna_fastq_files'
+rna_output=${SCRATCH_DIR}/${sample}/rna_fastq_files
 mkdir -p $rna_output
 
 for i in $rna
