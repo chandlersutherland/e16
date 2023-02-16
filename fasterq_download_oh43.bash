@@ -4,7 +4,7 @@
 #SBATCH --qos=minium_htc4_normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
-#SBATCH --time=12:00:00
+#SBATCH --time=03:00:00
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
 #SBATCH --mail-type=ALL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
@@ -24,7 +24,7 @@ bisulfite='SRR12463978 SRR12463979'
 rna='SRR13434390 SRR13434391 SRR13434392 SRR13434393 SRR13434394'
 
 atac_output=${SCRATCH_DIR}/${sample}/atac_fastq_files
-mkdir -p $atac_output
+#mkdir -p $atac_output
 
 #for i in $atac
 #	do 
@@ -33,20 +33,22 @@ mkdir -p $atac_output
 #done 
 
 bs_output=${SCRATCH_DIR}/${sample}/bs_fastq_files
-mkdir -p $bs_output
+#mkdir -p $bs_output
 
-for i in $bisulfite
-	do 
-	fasterq-dump --threads $SLURM_NTASKS -O $bs_output -t $SCRATCH_DIR -p $i
-	echo "$i bisulfite for sample $sample complete"
-done 
+#for i in $bisulfite
+#	do 
+#	fasterq-dump --threads $SLURM_NTASKS -O $bs_output -t $SCRATCH_DIR -p $i
+#	echo "$i bisulfite for sample $sample complete"
+#done 
 
 rna_output=${SCRATCH_DIR}/${sample}/rna_fastq_files
 mkdir -p $rna_output
 
-for i in $rna
-	do 
-	fasterq-dump --threads $SLURM_NTASKS -O $rna_output -t $SCRATCH_DIR -p $i
-	echo "$i rna for sample $sample complete"
-done 
+#for i in $rna
+#	do 
+#	fasterq-dump --threads $SLURM_NTASKS -O $rna_output -t $SCRATCH_DIR -p $i
+#	echo "$i rna for sample $sample complete"
+#done 
 
+time fasterq-dump --threads $SLURM_NTASKS -O $rna_output -t $SCRATCH_DIR -p SRR13434394
+echo "SRR13434394 rna for sample $sample complete"

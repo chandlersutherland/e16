@@ -35,18 +35,21 @@ rna='SRR12454914 SRR12454925 SRR12454936 SRR12454937'
 bs_output=${SCRATCH_DIR}/${sample}/bs_fastq_files
 mkdir -p $bs_output
 
-for i in $bisulfite
-	do 
-	fasterq-dump --threads $SLURM_NTASKS -O $bs_output -t $SCRATCH_DIR -p $i
-	echo "$i bisulfite for sample $sample complete"
-done 
+#for i in $bisulfite
+#	do 
+#	fasterq-dump --threads $SLURM_NTASKS -O $bs_output -t $SCRATCH_DIR -p $i
+#	echo "$i bisulfite for sample $sample complete"
+#done 
+
+time fasterq-dump --threads $SLURM_NTASKS -O $bs_output -t $SCRATCH_DIR -p SRR12463973
+echo "SRR12463973 for sample $sample complete"
 
 rna_output=${SCRATCH_DIR}/${sample}/rna_fastq_files
 mkdir -p $rna_output
 
 for i in $rna
 	do 
-	fasterq-dump --threads $SLURM_NTASKS -O $rna_output -t $SCRATCH_DIR -p $i
+	time fasterq-dump --threads $SLURM_NTASKS -O $rna_output -t $SCRATCH_DIR -p $i
 	echo "$i rna for sample $sample complete"
 done 
 
