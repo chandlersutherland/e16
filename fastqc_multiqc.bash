@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=fastqc
-#SBATCH --partition=savio2
-#SBATCH --qos=savio_lowprio
+#SBATCH --partition=savio4
+#SBATCH --qos=minium_htc4_normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
-#SBATCH --time=02:00:00
+#SBATCH --time=06:00:00
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
 #SBATCH --mail-type=ALL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
