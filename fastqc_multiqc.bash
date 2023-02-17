@@ -22,6 +22,6 @@ mkdir -p $OUTPUT_DIR
 cd $SCRATCH_DIR
 FILES=$(find . -type f -name '*fastq' -print)
 
-fastqc -o $OUTPUT_DIR $FILES 
+fastqc -o $OUTPUT_DIR -t 24 $FILES 
 
 multiqc -f $OUTPUT_DIR
