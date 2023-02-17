@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=fastqc
-#SBATCH --partition=savio4
+#SBATCH --partition=savio4_htc
 #SBATCH --qos=minium_htc4_normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
