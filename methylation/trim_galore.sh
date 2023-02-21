@@ -14,6 +14,7 @@
 module load cutadapt
 module load fastqc 
 module load python 
+module load parallel
 #pigz is installed in e16, which should support multi core for trimming spead 
 source activate e16
 
