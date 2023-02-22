@@ -28,39 +28,39 @@ bismark_output=$base/$sample/bismark_test
 #just test one 
 ACC='SRR12463972'
 
-time bismark 
-	--genome $genome \
+time bismark \
 	--temp_dir $SCRATCH \
 	--output_dir $bismark_output \
 	--prefix nondirectional.trim1 \
-	-p 4 \
+	--parallel 4 \
 	--non_directional \
-	-1 $trim_output/trimmed/$ACC_1_val_1.fq -2 $trim_output/trimmed/$ACC_2_val_2.fq
+	$genome \
+	-1 $trim_output/trimmed/${ACC}_1_val_1.fq -2 $trim_output/trimmed/${ACC}_2_val_2.fq
 	
-time bismark 
-	--genome $genome \
+time bismark \
 	--temp_dir $SCRATCH \
 	--output_dir $bismark_output \
-	-p 4 \
+	--parallel 4 \
 	--prefix directional.trim1 \
-	-1 $trim_output/trimmed/$ACC_1_val_1.fq -2 $trim_output/trimmed/$ACC_2_val_2.fq
+	$genome \
+	-1 $trim_output/trimmed/${ACC}_1_val_1.fq -2 $trim_output/trimmed/${ACC}_2_val_2.fq
 
-time bismark 
-	--genome $genome \
+time bismark \
 	--temp_dir $SCRATCH \
 	--output_dir $bismark_output \
 	--prefix nondirectional.trim2 \
-	-p 4 \
+	--parallel 4 \
 	--non_directional \
-	-1 $trim_output/trimmed2/$ACC_1_val_1.fq -2 $trim_output/trimmed2/$ACC_2_val_2.fq
+	$genome \
+	-1 $trim_output/trimmed2/${ACC}_1_val_1.fq -2 $trim_output/trimmed2/${ACC}_2_val_2.fq
 	
-time bismark 
-	--genome $genome \
+time bismark \
 	--temp_dir $SCRATCH \
 	--output_dir $bismark_output \
-	-p 4 \
+	--parallel 4 \
 	--prefix directional.trim2 \
-	-1 $trim_output/trimmed2/$ACC_1_val_1.fq -2 $trim_output/trimmed2/$ACC_2_val_2.fq
+	$genome \
+	-1 $trim_output/trimmed2/${ACC}_1_val_1.fq -2 $trim_output/trimmed2/${ACC}_2_val_2.fq
 	
 #export genome=$genome
 #export bismark_output=$bismark_output
