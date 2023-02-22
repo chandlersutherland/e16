@@ -9,6 +9,7 @@ rna_info=pd.read_csv('/global/home/users/chandlersutherland/e16/rna_download_inf
 rna_info['Sample']=rna_info['submitted_ftp'].str.split(pat=';', expand=True)[1].str.split(pat='/', expand=True)[5].str.split(pat='_', expand=True)[0]
 rna_info['Tissue']=rna_info['submitted_ftp'].str.split(pat=';', expand=True)[1].str.split(pat='/', expand=True)[5].str.split(pat='_', expand=True)[2]
 
+#change the tissue of interest (toi) to download a different subset of rna data 
 toi='middle'
 subset=rna_info[rna_info['Tissue'] == toi]
 
