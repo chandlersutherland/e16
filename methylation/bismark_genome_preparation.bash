@@ -15,8 +15,8 @@ module load samtools
 module load Bismark 
 module load python 
 
-GENOME=$base/$sample/genome
-cd $GENOME
+genome_dir=$base/$sample/genome
+cd $genome_dir
 
 #add lambda and puc19 controls to the genome before bismark conversion 
 lambda=/global/scratch/users/chandlersutherland/e16/em_control/lambda.fa
@@ -25,15 +25,19 @@ puc19=/global/scratch/users/chandlersutherland/e16/em_control/pUC19.fa
 genome=$(find . -type f -name "*.fa")
 base=$(basename $genome .fa)
 
-cat $genome $lambda $puc19 > ${base}_meth.fa 
+#bismark requires a genome directory as an input, so make a sub directory to put lambda/pUC19 genome in 
+mkdir -p $genome_dir/bismark
+
+cat $genome $lambda $puc19 > $genome_dir/bismark/${base}_meth.fa 
 echo 'added control sequences' 
 
 #run genome preparation
 time bismark_genome_preparation \
-	--verbose \
-	--bowtie2 \
-	--parallel 12 \
-	--path_to_aligner /global/home/groups/consultsw/sl-7.x86_64/modules/bowtie2/2.3.4.1 \
-	${base}_meth.fa
+     --verbose \
+     --large-index \
+     --bowtie2 \
+     --parallel 12 \
+     --path_to_aligner /global/home/groups/consultsw/sl-7.x86_64/modules/bowtie2/2.3.4.1 \
+     $genome_dir/bismark
 
-echo 'finished genome preparation for sample $sample'
+echo 'finished genome preparation for sample ${sample}'
