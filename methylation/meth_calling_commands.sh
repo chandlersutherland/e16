@@ -17,11 +17,8 @@ base="/global/scratch/users/chandlersutherland/e16"
 #while read sample; do sbatch --job-name=$sample.genome --export=base=$base,sample=$sample \
 #-A fc_kvkallow methylation/bismark_genome_preparation.bash; done < sample.txt 
 
-while read sample; do sbatch --job-name=$sample.unpigz --export=base=$base,sample=$sample \
--A fc_kvkallow unpigz.sh; done < sample.txt 
-
-#while read sample; do sbatch --job-name=$sample.trim_galore --export=base=$base,sample=$sample \
-# -A fc_kvkallow methylation/trim_galore.sh; done < accessions.txt
+while read sample; do sbatch --job-name=$sample.trim_galore --export=base=$base,sample=$sample \
+ -A fc_kvkallow methylation/trim_galore.sh; done < sample.txt
 
 #run bismark alignment 
 #genome="/global/scratch/users/chandlersutherland/phytozome/Athaliana/Araport11/assembly"
