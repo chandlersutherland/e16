@@ -22,7 +22,7 @@ accession=$(basename -s _1.fastq $a)
 reps=$(echo "$accession" | wc -l)
 threads=$(echo `expr $SLURM_NTASKS / $reps`)
 
-GENOME_DIR=$base/$sample/$genome/$STAR
+GENOME_DIR=$base/$sample/genome/STAR
 STAR_OUTPUT=$INPUT/STAR
 mkdir -p $STAR_OUTPUT
 
