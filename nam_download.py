@@ -9,7 +9,7 @@ nam_genome_info=pd.read_csv('/global/home/users/chandlersutherland/e16/nam_genom
 for i in range(0, len(nam_genome_info)):
     start_time = time.time()
     #set sample with for loop
-    sample=nam_genome_info.loc[i,0]
+    sample=nam_genome_info.iloc[i,0]
     accession_name=sample.split('-')[1]
 
     os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/genome")
@@ -30,7 +30,7 @@ for i in range(0, len(nam_genome_info)):
     os.system("wget https://download.maizegdb.org/"+sample+"/"+sample+".fa.gz")
     
     #unpigz
-    os.system("upigz *")
+    os.system("unpigz *")
     
     end_time=time.time()
-    print("finished genome download for assembly ", accession_name, ". Total time taken: " end_time - start_time)
+    print("finished genome download for assembly ", accession_name, ". Total time taken: ", end_time - start_time)
