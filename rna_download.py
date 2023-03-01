@@ -27,4 +27,5 @@ for i in range(0, len(subset)):
     
     os.system("wget ftp://"+r1)
     os.system("wget ftp://"+r2)
+    end_time=time.time()
     print("finished rna download for assembly ", accession_name, ". Total time taken: ", end_time - start_time)
