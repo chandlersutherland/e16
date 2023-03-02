@@ -10,7 +10,7 @@ rna_info['Sample']=rna_info['submitted_ftp'].str.split(pat=';', expand=True)[1].
 rna_info['Tissue']=rna_info['submitted_ftp'].str.split(pat=';', expand=True)[1].str.split(pat='/', expand=True)[5].str.split(pat='_', expand=True)[2]
 
 #change the tissue of interest (toi) to download a different subset of rna data 
-toi='middle'
+toi='tip'
 subset=rna_info[rna_info['Tissue'] == toi]
 
 for i in range(0, len(subset)):
@@ -19,8 +19,8 @@ for i in range(0, len(subset)):
     accession_name=subset.iloc[i,9]
     
     #make dir 
-    os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/rna")
-    os.chdir("/global/scratch/users/chandlersutherland/e16/"+accession_name+"/rna")
+    os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/rna_tip")
+    os.chdir("/global/scratch/users/chandlersutherland/e16/"+accession_name+"/rna_tip")
     
     #want the fastq version of the files 
     r1=subset.iloc[i,6].split(';')[0]

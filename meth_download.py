@@ -14,10 +14,10 @@ leaf=em_info[(em_info['rep']=='rep1') | (em_info['rep']=='rep2') | (em_info['rep
 
 #pretty messy metadata, so download everything (corrected, 3 reps, resequencing)
 
-for i in range(0, len(leaf)):
+for i in range(38, len(leaf)):
     start_time = time.time()
     #set sample with for loop
-    accession_name=subset.iloc[i,9]
+    accession_name=leaf.iloc[i,9]
     
     #make dir 
     os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/em")
