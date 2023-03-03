@@ -25,7 +25,10 @@ puc19=/global/scratch/users/chandlersutherland/e16/em_control/pUC19.fa
 genome=$(find . -type f -name "*.fa")
 base=$(basename $genome .fa)
 
-cat $genome $lambda $puc19 > ${base}_meth.fa 
+#bismark requires a genome directory as an input, so make a sub directory to put lambda/pUC19 genome in 
+mkdir -p $GENOME/bismark
+
+cat $genome $lambda $puc19 > $GENOME/bismark/${base}_meth.fa 
 echo 'added control sequences' 
 
 #run genome preparation
@@ -34,6 +37,6 @@ time bismark_genome_preparation \
 	--bowtie2 \
 	--parallel 12 \
 	--path_to_aligner /global/home/groups/consultsw/sl-7.x86_64/modules/bowtie2/2.3.4.1 \
-	${base}_meth.fa
+	$GENOME/bismark
 
 echo 'finished genome preparation for sample $sample'
