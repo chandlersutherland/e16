@@ -40,4 +40,4 @@ time bismark_genome_preparation \
      --path_to_aligner /global/home/groups/consultsw/sl-7.x86_64/modules/bowtie2/2.3.4.1 \
      $genome_dir/bismark
 
-echo 'finished genome preparation for sample ${sample}'
+echo "finished genome preparation for sample $sample"
