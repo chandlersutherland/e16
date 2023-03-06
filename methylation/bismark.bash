@@ -27,17 +27,17 @@ a=$(find . -type f -name '*_1_val_1.fq')
 accession=$(basename -s _1_val_1.fq $a)
 
 BISMARK() {
-	echo "beginning bismark on sample ${sample} ${1}"
-	bismark --genome $genome \
-		--temp_dir $SCRATCH \
-		--output_dir $bismark_output \
-		-p 4 \
-		--non_directional \
-		-1 "${1}"_1_val_1.fq -2 "${1}"_2_val_2.fq
+    echo "beginning bismark on sample ${sample} ${1}"
+    bismark --genome $genome \
+	--temp_dir $SCRATCH \
+	--output_dir $bismark_output \
+	-p 4 \
+	--non_directional \
+	-1 "${1}"_1_val_1.fq -2 "${1}"_2_val_2.fq
 }
 
 export genome=$genome
 export bismark_output=$bismark_output
 export -f BISMARK
 
-parallel BISMARK ::: $accesssion
+parallel BISMARK ::: $accession
