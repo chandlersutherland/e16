@@ -11,11 +11,15 @@
 #SBATCH --output=/global/home/users/chandlersutherland/slurm_stdout/slurm-%j.out
 
 #export an input file to be sorted and indexed 
-
+#pigz compress sorted and indexed file for easy scp 
 module load samtools 
+module load pigz
+
 basename=$(basename $input .bam) 
 dirname=$(dirname $input) 
 cd $dirname 
 
 samtools sort -o $basename.sorted.bam $input 
-samtools index $basename.sorted.bam 
+samtools index $basename.sorted.bam
+
+pigz $basename.sorted.bam 
