@@ -26,3 +26,13 @@ for i in range(1, len(NLR_position)):
     os.system('samtools coverage -r '+call+' '+bismark_file+'  >> '+basename+'_coverage.tsv')
 
 os.system("sed '/^#/d' "+basename+"_coverage.tsv > "+basename+"_clean_coverage.tsv") 
+
+#add gene names
+cov=pd.read_csv(basename+"_clean_coverage.tsv", sep='\t', skiprows=1, names=['rname', 'startpos', 'endpos', 'numreads', 'covbases', 'coverage', 'meandepth', 'meanbaseq', 'meanmapq'])
+merged=pd.merge(cov, NLR_position, how='left', left_on=['rname', 'startpos', 'endpos'], right_on=['chrom', 'chromStart', 'chromEnd'])
+merged=merged.drop(merged.columns[[9, 10, 11, 13]], axis=1)
+cols=['name', 'rname', 'startpos', 'endpos', 'numreads', 'covbases', 'coverage', 'meandepth', 'meanbaseq', 'meanmapq']
+merged=merged[cols]
+
+merged.to_csv(basename+"_clean_coverage.tsv", sep='\t') 
+
