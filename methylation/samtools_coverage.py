@@ -3,7 +3,8 @@ import sys
 import pandas as pd 
 
 #read in NLR bed file, and take bam file from bash input 
-NLR_position=pd.read_csv(sys.argv[1], sep='\t', names=['Chromosome', 'start', 'end', 'marker', 'code'], index_col=False)
+NLR_position=pd.read_csv(sys.argv[1], sep='\t', index_col=False)
+NLR_position=NLR_position.drop(NLR_position.columns[[0]], axis=1)
 print('NLR_position file loaded')
 
 bismark_file=str(sys.argv[2])
@@ -21,7 +22,7 @@ for i in range(1, len(NLR_position)):
     chromosome=NLR_position.iloc[i,0]
     start=NLR_position.iloc[i,1]
     end=NLR_position.iloc[i,2]
-    call=chromosome +':' + str(int(start)) + '-' + str(int(end))
+    call=str(chromosome) +':' + str(int(start)) + '-' + str(int(end))
     os.system('samtools coverage -r '+call+' '+bismark_file+'  >> '+basename+'_coverage.tsv')
 
 os.system("sed '/^#/d' "+basename+"_coverage.tsv > "+basename+"_clean_coverage.tsv") 
