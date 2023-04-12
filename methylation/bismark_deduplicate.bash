@@ -28,8 +28,11 @@ mkdir -p $extraction_output
 a=$(find . -type f -name '*_1_val_1_bismark_bt2_pe.bam')
 accession=$(basename -s _1_val_1_bismark_bt2_pe.bam $a)
 
-#define deduplicator/extractor function 
+#define cores to partition to each replicate
+num_reps=$(find . type -f -name '*_1_val_1_bismark_bt2_pe.bam' | wc -l)
+cores=expr $SLURM_NTASKS / $num_reps
 
+#define deduplicator/extractor function 
 DEDUP_EXTRA () {
 
 	#deduplicate bismark 
@@ -44,7 +47,7 @@ DEDUP_EXTRA () {
 		--comprehensive \
 		--bedGraph \
 		--CX \
-		--parallel $SLURM_NTASKS/2 \
+		--parallel $cores \
 		$deduplicate_input/deduplicate/${1}*.bam
 		
 	echo "finished extraction of ${1}" 
@@ -52,6 +55,7 @@ DEDUP_EXTRA () {
 
 export deduplicate_input=$deduplicate_input
 export extraction_output=$extraction_output
+export cores=$cores
 export -f DEDUP_EXTRA 
 
-time parallel BISMARK ::: $a
+time parallel DEDUP_EXTRA ::: $a
