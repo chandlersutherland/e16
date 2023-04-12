@@ -4,7 +4,7 @@
 #SBATCH --qos=minium_htc4_normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
-#SBATCH --time=04:00:00
+#SBATCH --time=02:00:00
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
 #SBATCH --mail-type=ALL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
@@ -26,20 +26,20 @@ mkdir -p $extraction_output
 
 #define the input files 
 a=$(find . -type f -name '*_1_val_1_bismark_bt2_pe.bam')
-accession=$(basename -s _1_val_1_bismark_bt2_pe.bam $a)
+prefix=$(basename -s .bam $a)
 
 #define cores to partition to each replicate
-num_reps=$(find . type -f -name '*_1_val_1_bismark_bt2_pe.bam' | wc -l)
-cores=expr $SLURM_NTASKS / $num_reps
+num_reps=$(find . -type f -name '*_1_val_1_bismark_bt2_pe.bam' | wc -l)
+cores=$(expr $SLURM_NTASKS / $num_reps)
 
 #define deduplicator/extractor function 
 DEDUP_EXTRA () {
 
 	#deduplicate bismark 
-	deduplicate_bismark -p \
-		--output_dir  $deduplicate_input/deduplicate \
-		${1}
-	echo "finished deduplication of ${1}" 
+	#deduplicate_bismark -p \
+	#	--output_dir  $deduplicate_input/deduplicate \
+	#	./${1}
+	#echo "finished deduplication of ${1}" 
 	
 	bismark_methylation_extractor -p \
 		--output $extraction_output \
@@ -48,7 +48,7 @@ DEDUP_EXTRA () {
 		--bedGraph \
 		--CX \
 		--parallel $cores \
-		$deduplicate_input/deduplicate/${1}*.bam
+		$deduplicate_input/deduplicate/${1}.deduplicate.bam
 		
 	echo "finished extraction of ${1}" 
 }
@@ -58,4 +58,4 @@ export extraction_output=$extraction_output
 export cores=$cores
 export -f DEDUP_EXTRA 
 
-time parallel DEDUP_EXTRA ::: $a
+time parallel DEDUP_EXTRA ::: $prefix
