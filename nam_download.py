@@ -30,7 +30,6 @@ for i in range(0, len(nam_genome_info)):
     #os.system("wget https://download.maizegdb.org/"+sample+"/"+sample+".fa.gz")
     
     #download the cds file for polyester 
-    https://download.maizegdb.org/Zm-B97-REFERENCE-NAM-1.0/Zm-B97-REFERENCE-NAM-1.0_Zm00018ab.1.canonical.cds.fa.gz
     os.system("wget   https://download.maizegdb.org/"+sample+"/"+sample+"_"+annotation_name+".canonical.cds.fa.gz")
     #unpigz
     os.system("unpigz *")
