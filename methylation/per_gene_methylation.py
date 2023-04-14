@@ -24,9 +24,10 @@ print('Output directory is '+out_dir)
 
 #input necessary gene name files variables (bed files, chromosomes)
 #second passed argument should be the bed file for the entire genome
-chroms = ['Chr1', 'Chr2', 'Chr3', 'Chr4', 'Chr5']
+chroms=methylation['Chrom'].unique()
 pos_file=str(sys.argv[2])
-all_positions = pd.read_csv(pos_file, sep = '\t',header=0, names=['Chrom', 'start', 'end', 'strand', 'gene'], index_col=False)
+all_positions = pd.read_csv(pos_file, sep = '\t',header=0,  names=['index', 'Chrom', 'start', 'end', 'gene', 'strand'], index_col=False).drop(['index'], axis=1)
+all_positions=all_positions[['Chrom', 'start', 'end', 'strand', 'gene']]
 
 #step 1: filter out ChrC and ChrM, since we don't care about them 
 met=methylation.loc[(methylation['Chrom']!='ChrC') & (methylation['Chrom']!='ChrM')] 
