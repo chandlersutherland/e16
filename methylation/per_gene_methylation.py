@@ -11,9 +11,9 @@ import numpy as np
 #input is an unzipped .cov file 
 cov_file=str(sys.argv[1])
 methylation = pd.read_csv(cov_file, skiprows=1, sep = '\t', names=['Chrom', 'start_pos', 'end_pos', 'meth_percentage', 'count_methylated', 'count_unmethylated'])
-filename=cov_file.split('/')[-1]
+filename=cov_file.split('/')[-1].split('.')[0]
 context=filename.split('_')[0]
-sample=filename.split('_')[2].split('.')[0]
+sample=cov_file.split('/')[6]
 print(filename+' loaded successfully')
 
 #initialize output directory (same as input directory)
@@ -112,7 +112,7 @@ print('Gene names assigned')
 
 #step 4: save file to a tsv 
 #untested
-all_gene_count.to_csv(out_dir+'/'+context+'_per_gene_met_'+sample+'.tsv', sep='\t', header=True, index=False)
-print('Gene counts saved to '+out_dir+'/'+context+'_per_gene_met_'+sample+'.tsv')
+all_gene_count.to_csv(out_dir+'/'+filename+'_per_gene_met_'+sample+'.tsv', sep='\t', header=True, index=False)
+print('Gene counts saved to '+out_dir+'/'+filename+'_per_gene_met_'+sample+'.tsv')
 
 print('Finished with '+sample+' in the '+context+' context!!')
