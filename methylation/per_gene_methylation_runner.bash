@@ -22,12 +22,13 @@ gene_positions=/global/scratch/users/chandlersutherland/e16/${sample}/genome/*_a
 #where are the coverage files that have not been processed yet
 cov_dir=/global/scratch/users/chandlersutherland/e16/${sample}/em/bedGraph_highcov
 
+cd $cov_dir
 #First define the finished files
 finished=$(find . -type f -name '*.tsv')
 prefix=$(basename -s "_per_gene_met_${sample}.tsv" $finished)
 for i in $prefix; do echo $i >> finished_prefix; done 
 
-cd $cov_dir
+
 
 #get all of the files 
 all=$(find . -type f -name '*.cov')
@@ -38,6 +39,8 @@ for i in $all_prefix; do echo $i >> all_prefix; done
 unfinished=$(comm -23 <(sort all_prefix) <(sort finished_prefix))
 
 echo "$unfinished have not been completed. Starting meth extraction now"
+rm prefix 
+rm finished_prefix 
 
 for f in $unfinished
 do 
