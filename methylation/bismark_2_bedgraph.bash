@@ -4,7 +4,7 @@
 #SBATCH --qos=minium_htc4_normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
-#SBATCH --time=08:00:00
+#SBATCH --time=04:30:00
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
 #SBATCH --mail-type=ALL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
@@ -29,14 +29,14 @@ BISMARK_BEDGRAPH () {
 	--cutoff 5 \
 	--CX \
 	$1
-    echo 'finished ${1}'
+    echo "finished ${1}"
 }
-export -f $output
+export output=$output
 export -f BISMARK_BEDGRAPH
 
 CHX_in=$input/extract/CH*_context_*_1_val_1_bismark_bt2_pe.deduplicated.txt
 
-parallel BISMARK_BEDGRAPH ::: $CHG_in
+parallel BISMARK_BEDGRAPH ::: $CHX_in
 
 #need a separate function for CpG since it cannot take the --CX tag 
 BISMARK_BEDGRAPH_CpG () {
@@ -45,7 +45,7 @@ BISMARK_BEDGRAPH_CpG () {
 	--dir $output \
 	--cutoff 5 \
 	$1
-    echo 'finished' $1
+    echo "finished ${1}"
 }
 
 export -f BISMARK_BEDGRAPH_CpG
@@ -54,7 +54,7 @@ CpG_in=$input/extract/CpG_context_*_1_val_1_bismark_bt2_pe.deduplicated.txt
 
 parallel BISMARK_BEDGRAPH ::: $CpG_in 
 
-cd $extraction_output/bedGraph_highcov
+cd $output
 gunzip *.cov.gz 
 
-echo 'finished generating context specific coverage files for ${sample}'
+echo "finished generating context specific coverage files for ${sample}"
