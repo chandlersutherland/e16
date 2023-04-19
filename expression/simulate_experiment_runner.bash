@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=simulate_experiment_runner
-#SBATCH --account=fc_kvkallow
+#SBATCH --account=co_minium
 #SBATCH --partition=savio2
-#SBATCH --qos=savio_normal
+#SBATCH --qos=savio_lowprio
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=20
 #SBATCH --time=03:00:00
@@ -17,7 +17,7 @@ module load r-packages
 cd $SCRATCH
 
 fasta=/global/scratch/users/chandlersutherland/e16/${sample}/genome/*.canonical.cds.fa
-out_dir=/global/scratch/users/chandlersutherland/e16/${sample}/rna_tipe/simulated
+out_dir=/global/scratch/users/chandlersutherland/e16/${sample}/rna_tip/simulated
 
 mkdir -p $out_dir 
 
