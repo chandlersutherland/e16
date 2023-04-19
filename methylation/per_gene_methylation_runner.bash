@@ -23,5 +23,5 @@ gene_positions=/global/scratch/users/chandlersutherland/e16/${sample}/genome/*_a
 cov_dir=/global/scratch/users/chandlersutherland/e16/${sample}/em/bedGraph_highcov
 for f in $cov_dir/*.bed.gz.bismark.cov
 do 
-	python $HOME/nlr_features/methylation/per_gene_methylation.py $f $gene_positions 
+	python $HOME/e16/methylation/per_gene_methylation.py $f $gene_positions 
 done
