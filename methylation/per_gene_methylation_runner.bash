@@ -24,8 +24,10 @@ cov_dir=/global/scratch/users/chandlersutherland/e16/${sample}/em/bedGraph_highc
 
 #First define the finished files
 finished=$(find . -type f -name '*.tsv')
-prefix=$(basename -s _per_gene_met_${sample}.tsv $finished)
+prefix=$(basename -s "_per_gene_met_${sample}.tsv" $finished)
 for i in $prefix; do echo $i >> finished_prefix; done 
+
+cd $cov_dir
 
 #get all of the files 
 all=$(find . -type f -name '*.cov')
@@ -34,6 +36,8 @@ for i in $all_prefix; do echo $i >> all_prefix; done
 
 #define the complement, aka all unknown files 
 unfinished=$(comm -23 <(sort all_prefix) <(sort finished_prefix))
+
+echo "$unfinished have not been completed. Starting meth extraction now"
 
 for f in $unfinished
 do 

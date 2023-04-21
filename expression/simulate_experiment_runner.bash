@@ -16,8 +16,8 @@ module load r-packages
 
 cd $SCRATCH
 
-fasta=/global/scratch/users/chandlersutherland/e16/${sample}/genome/*.canonical.cds.fa
-out_dir=/global/scratch/users/chandlersutherland/e16/${sample}/rna_tip/simulated
+fasta=/global/scratch/users/chandlersutherland/e16/${sample}/genome/*.canonical.cds.fa.nlrs.fa
+out_dir=/global/scratch/users/chandlersutherland/e16/${sample}/rna_tip/simulated_nlrs
 
 mkdir -p $out_dir 
 
