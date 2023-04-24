@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
-#SBATCH --time=06:00:00
+#SBATCH --time=72:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
 #SBATCH --output=/global/home/users/chandlersutherland/slurm_stdout/slurm-%j.out
@@ -23,6 +23,8 @@ gene_positions=/global/scratch/users/chandlersutherland/e16/${sample}/genome/*_a
 cov_dir=/global/scratch/users/chandlersutherland/e16/${sample}/em/bedGraph_highcov
 
 cd $cov_dir
+rm -r *prefix
+
 #First define the finished files
 finished=$(find . -type f -name '*.tsv')
 prefix=$(basename -s "_per_gene_met_${sample}.tsv" $finished)
@@ -44,5 +46,5 @@ rm finished_prefix
 
 for f in $unfinished
 do 
-	python $HOME/e16/methylation/per_gene_methylation.py $cov_dir/$f.bed.gz.bismark.cov $gene_positions 
+	time python $HOME/e16/methylation/per_gene_methylation.py $cov_dir/$f.bed.gz.bismark.cov $gene_positions 
 done
