@@ -40,9 +40,7 @@ for i in $all_prefix; do echo $i >> all_prefix; done
 #define the complement, aka all unknown files 
 unfinished=$(comm -23 <(sort all_prefix) <(sort finished_prefix))
 
-echo "$unfinished have not been completed. Starting meth extraction now"
-rm prefix 
-rm finished_prefix 
+echo "$unfinished have not been completed. Starting meth extraction now" 
 
 for f in $unfinished
 do 
