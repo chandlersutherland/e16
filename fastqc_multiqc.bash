@@ -28,5 +28,5 @@ fastqc -o $OUTPUT_DIR -t 24 $FILES
 #cd $base/$sample/em/
 #FILES=$(find . -type f -maxdepth 1 -name '*fastq' -print)
 
-fastqc -o $OUTPUT_DIR -t 24 $FILES 
+#fastqc -o $OUTPUT_DIR -t 24 $FILES 
 
