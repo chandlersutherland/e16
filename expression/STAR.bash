@@ -15,7 +15,7 @@ module load parallel
 source activate e16
 
 #define input variables: input and output directories, number of threads 
-INPUT=$base/$sample/rna_tip
+INPUT=$base/$sample/rna_${tissue}
 cd $INPUT
 a=$(find . -type f -name '*_1.fastq')
 accession=$(basename -s _1.fastq $a)
