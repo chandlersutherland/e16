@@ -12,7 +12,7 @@ for i in range(0, len(nam_genome_info)):
     sample=nam_genome_info.iloc[i,0]
     accession_name=sample.split('-')[1]
 
-    os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/genome")
+    #os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/genome")
     os.chdir("/global/scratch/users/chandlersutherland/e16/"+accession_name+"/genome")
 
     #get readme
@@ -30,9 +30,11 @@ for i in range(0, len(nam_genome_info)):
     #os.system("wget https://download.maizegdb.org/"+sample+"/"+sample+".fa.gz")
     
     #download the cds file for polyester 
-    os.system("wget   https://download.maizegdb.org/"+sample+"/"+sample+"_"+annotation_name+".canonical.cds.fa.gz")
+    #os.system("wget   https://download.maizegdb.org/"+sample+"/"+sample+"_"+annotation_name+".canonical.cds.fa.gz")
     #unpigz
-    os.system("unpigz *")
+    #os.system("unpigz *")
     
+    #get gene info txt file 
+    os.system("wget https://download.maizegdb.org/" +sample+"/"+annotation_name+".fulldata.txt")
     end_time=time.time()
     print("finished genome download for assembly ", accession_name, ". Total time taken: ", end_time - start_time)
