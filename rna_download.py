@@ -1,26 +1,25 @@
-#download rna reads from ENA 
-#using the middle of the 10th leaf 
-
+#download rna reads from ENA by tissue type 
 import os 
 import pandas as pd 
 import time 
+import sys
 
-rna_info=pd.read_csv('/global/home/users/chandlersutherland/e16/rna_download_info.txt', sep='\t', header=0)
-rna_info['Sample']=rna_info['submitted_ftp'].str.split(pat=';', expand=True)[1].str.split(pat='/', expand=True)[5].str.split(pat='_', expand=True)[0]
-rna_info['Tissue']=rna_info['submitted_ftp'].str.split(pat=';', expand=True)[1].str.split(pat='/', expand=True)[5].str.split(pat='_', expand=True)[2]
+#read in metadata file 
+rna_info=pd.read_csv('/global/home/users/chandlersutherland/e16/rna_metadata.csv', index_col=0)
 
-#change the tissue of interest (toi) to download a different subset of rna data 
-toi='tip'
-subset=rna_info[rna_info['Tissue'] == toi]
+#supply accession as sysargv[1]
+sample=sys.argv[1]
+subset=rna_info[rna_info['Sample']==sample]
 
 for i in range(0, len(subset)):
     start_time = time.time()
-    #set sample with for loop
-    accession_name=subset.iloc[i,9]
+    
+    #set tissue 
+    tissue=subset.iloc[i,10]
     
     #make dir 
-    os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+accession_name+"/rna_tip")
-    os.chdir("/global/scratch/users/chandlersutherland/e16/"+accession_name+"/rna_tip")
+    os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue)
+    os.chdir("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue)
     
     #want the fastq version of the files 
     r1=subset.iloc[i,6].split(';')[0]
@@ -29,4 +28,4 @@ for i in range(0, len(subset)):
     os.system("wget ftp://"+r1)
     os.system("wget ftp://"+r2)
     end_time=time.time()
-    print("finished rna download for assembly ", accession_name, ". Total time taken: ", end_time - start_time)
+    print("finished rna download for ", sample, tissue,". Total time taken: ", end_time - start_time)
