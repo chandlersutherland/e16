@@ -34,27 +34,26 @@ def count_left_s(sample):
 
 #function that takes in that df, then downloads using ftp 
 def downloader(left):
+    for run_accession in left['run_accession'].unique():
+        corrupt= glob.glob("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_*/"+ run_accession+'*')
+        print('found' + str(len(corrupt)) + 'corrupt files, removing...')
+        for i in corrupt: 
+                print("removing file "+ i)
+                os.remove(i) 
+                
     for i in range(0, len(left)):
         start_time = time.time()
         sample=left.iloc[i, 9]
         tissue=left.iloc[i, 10]
-        run_accession=left.iloc[0,3]
         os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue)
         os.chdir("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue)
         
-        corrupt= glob.glob("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue+'/'+ run_accession+'*')
-        print('found' + str(len(corrupt)) + 'corrupt files, removing...) 
+        list=left.iloc[i,6].split(';')[0].split('/')[0:6]
+        base='/'.join(list)
+        ex=left.iloc[0,12]
         
-        for i in corrupt: 
-            print("removing file "+ i)
-            os.remove(i) 
-        
-        r1=left.iloc[i,6].split(';')[0]
-        r2=left.iloc[i,6].split(';')[1]
-    
-        os.system("wget ftp://"+r1)
-        os.system("wget ftp://"+r2)
-        file=left.iloc[i,12]
+        os.system("wget ftp://"+base+'/'+ex+'.gz')
+        file=str(left.iloc[i,12])+'.gz'
         if os.path.isfile(file) == False:
             print("download failed for", sample, tissue, file)
         else:
@@ -65,6 +64,6 @@ def downloader(left):
 left=count_left_s(sample)
 downloader(left)
 
-print('/n/n/n')
+print('\n\n\n')
 print('the following files for sample', sample, 'failed:')
 count_left_s(sample) 
