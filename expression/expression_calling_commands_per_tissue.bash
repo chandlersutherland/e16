@@ -14,21 +14,18 @@ cd /global/home/users/chandlersutherland/e16/
 base="/global/scratch/users/chandlersutherland/e16"
 module load python 
 
-#first, generate a STAR genome 
-#while read sample; do sbatch --job-name=$sample.genome --export=base=$base,sample=$sample \
-#-A fc_kvkallow expression/make_STAR_genome_dir.bash; done < sample.txt 
-#sample='CML103' 
+#first, download problematic rna files (don't have a STAR output) 
+python rna_download.py $sample 
 
 #unpigz files 
-while read tissue; do sbatch --job-name=$sample.$tissue.unpigz \
---export=base=$base,sample=$sample,tissue=$tissue -A co_minium -p savio4_htc \
---qos minium_htc4_normal unpigz.sh; done < tissues.txt
+sbatch --job-name=$sample.unpigz --export=base=$base,sample=$sample -A co_minium -p savio4_htc \
+--qos minium_htc4_normal unpigz.sh
 
 #wait until complete to launch next jobs 
-until [ ! -f $base/$sample/rna_root/*.fq ]
+until [ ! -f $base/$sample/rna_root/*.fastq ]
 do
 
-    sleep 5
+    sleep 15
 done
 echo "proceeding to STAR, unpigz finished" 
 
