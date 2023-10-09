@@ -61,10 +61,23 @@ def downloader(left):
             end_time=time.time()
             print("finished rna download for ", sample, tissue,". Total time taken: ", end_time - start_time)
             
+def STAR_run(left):
+    sample=left.iloc[0,9]
+    for tissue in left['tissue'].unique():
+        STAR_command="sbatch --job-name="+sample+".STAR --export=base=/global/scratch/users/chandlersutherland/e16,sample="+sample+",tissue="+tissue+" -A co_minium --qos minium_htc4_normal --partition savio4_htc /global/home/users/chandlersutherland/e16/expression/STAR.bash"" -A co_minium --partition savio4_htc expression/STAR.bash"
+        os.system(STAR_command) 
+        print("running star for "+sample+" "+tissue)
+        
 
 left=count_left_s(sample)
-downloader(left)
+#downloader(left)
+
+unpigz_command="sbatch --job-name="+sample+".unpigz --export=base=/global/scratch/users/chandlersutherland/e16,sample="+sample+
+" -A co_minium -p savio4_htc --qos minium_htc4_normal /global/home/users/chandlersutherland/e16/unpigz.sh"
+#os.system(unpigz_command)
+
+STAR_run(left)
 
 print('\n\n\n')
-print('the following files for sample', sample, 'failed:')
-count_left_s(sample) 
+#print('the following files for sample', sample, 'failed:')
+#count_left_s(sample) 
