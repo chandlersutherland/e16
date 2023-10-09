@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --time=00:10:00
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=FAIL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
 #SBATCH --output=/global/home/users/chandlersutherland/slurm_stdout/slurm-%j.out
 

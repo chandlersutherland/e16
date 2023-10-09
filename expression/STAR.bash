@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --time=00:30:00
 #SBATCH --mail-user=chandlersutherland@berkeley.edu
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type=FAIL
 #SBATCH --error=/global/home/users/chandlersutherland/slurm_stderr/slurm-%j.out
 #SBATCH --output=/global/home/users/chandlersutherland/slurm_stdout/slurm-%j.out
 
@@ -15,17 +15,13 @@ module load parallel
 
 source activate e16
 
-#for memory testing 
-sample='CML103'
-tissue='anther' 
-
 #define input variables: input and output directories, number of threads 
 INPUT=$base/$sample/rna_${tissue}
 cd $INPUT
 a=$(find . -type f -name '*_1.fastq')
 accession=$(basename -s _1.fastq $a)
-#reps=$(echo "$accession" | wc -l)
-#threads=$(echo `expr $SLURM_NTASKS / $reps`)
+reps=$(echo "$accession" | wc -l)
+threads=$(echo `expr $SLURM_NTASKS / $reps`)
 
 GENOME_DIR=$base/$sample/genome/STAR
 STAR_OUTPUT=$INPUT/STAR

@@ -17,22 +17,34 @@ module load python
 #first, generate a STAR genome 
 #while read sample; do sbatch --job-name=$sample.genome --export=base=$base,sample=$sample \
 #-A fc_kvkallow expression/make_STAR_genome_dir.bash; done < sample.txt 
-sample='CML103' 
+#sample='CML103' 
 
 #unpigz files 
-while read tissue; do sbatch --job-name=$sample.$tissue.unpigz \
---export=base=$base,sample=$sample,tissue=$tissue -A co_minium -p savio4_htc \
---qos minium_htc4_normal unpigz.sh; done < tissues.txt
+#while read tissue; do sbatch --job-name=$sample.$tissue.unpigz \
+#--export=base=$base,sample=$sample,tissue=$tissue -A co_minium -p savio4_htc \
+#--qos minium_htc4_normal unpigz.sh; done < tissues.txt
 
-sleep 5m
+#wait until complete to launch next jobs 
+until [ ! -f $base/$sample/rna_root/*.fq ]
+do
+
+    sleep 5
+done
+echo "proceeding to STAR, unpigz finished" 
 
 #run STAR in quant mode 
 while read tissue; do sbatch --job-name=$sample.$tissue.STAR --export=base=$base,sample=$sample,tissue=$tissue \
 -A co_minium -p savio4_htc --qos minium_htc4_normal expression/STAR.bash; done < tissues.txt 
 
-sleep 15m
+#wait until complete 
+until [ ! -f $base/$sample/rna_root/*.tab ]
+do
+    sleep 5
+done
+echo "STAR finished, make conglom output file"
+
 #create output file 
-python tpm_calc.py $sample 
+python expression/tpm_calc.py $sample 
 
 #QC coverage of each NLR 
 #while read sample; do sbatch --job-name=$sample.coverage --export=base=$base,sample=$sample \
