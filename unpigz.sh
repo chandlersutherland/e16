@@ -11,9 +11,9 @@
 #SBATCH --output=/global/home/users/chandlersutherland/slurm_stdout/slurm-%j.out
 
 module load pigz
-INPUT=$base/$sample/rna_${tissue}
+INPUT=$base/$sample/
 
 cd $INPUT
 
-files=$(find . -type f -name '*.gz')
-unpigz $files 
+files=$(find . -type f -wholename '*.gz')
+unpigz -f $files 
