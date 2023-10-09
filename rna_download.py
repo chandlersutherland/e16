@@ -4,6 +4,7 @@ import pandas as pd
 import time 
 import sys
 import glob
+pd.options.mode.chained_assignment = None  # default='warn'
 
 #read in metadata file 
 rna_info=pd.read_csv('/global/home/users/chandlersutherland/e16/rna_metadata.csv', index_col=0)
@@ -11,30 +12,24 @@ sample=sys.argv[1]
 
 #define function that takes the name of a sample, searches to see what has been downloaded, and returns a df of what's left 
 def count_left_s(sample):
-    #glob paths, convert to df 
-    paths=glob.glob(os.path.join('/global/scratch/users/chandlersutherland/e16/'+sample+'/rna_*/*.gz'))
+    paths=glob.glob(os.path.join('/global/scratch/users/chandlersutherland/e16/'+sample+'/rna_*/STAR/*_ReadsPerGene.out.tab'))
     subset=rna_info[rna_info['Sample']==sample]
     df=pd.DataFrame(paths)
-    done=df[0].str.split('/', expand=True)
+    done=df.iloc[:,0].str.split('/', expand=True)
+    done=done.iloc[:,9].str.strip('_ReadsPerGene.out.tab')
 
-    #search the subset rna_info file 
-    fastq=subset['fastq_ftp'].str.split(';', expand=True)
-    subset['fastq_r1']=fastq[0].str.split('/', expand=True)[6]
-    subset['fastq_r2']=fastq[1].str.split('/', expand=True)[6]
-    
-    #melt and search for what's left 
-    subset_long=pd.melt(subset, id_vars=['study_accession', 'sample_accession', 'experiment_accession', 
-    'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp', 'submitted_ftp', 'sra_ftp', 'Sample', 
-    'tissue'],
-    value_vars=['fastq_r1', 'fastq_r2'], var_name='fastq_path')
-    finished_files=done[8]
-    left=subset_long[-subset_long['value'].isin(finished_files)]
-    left=left.reset_index()[['study_accession', 'sample_accession', 'experiment_accession', 'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp','submitted_ftp', 'sra_ftp', 'Sample',
-    'tissue', 'fastq_path', 'value']]
+    fastq=subset['fastq_ftp'].str.split(';', expand=True)#.str.strip('.gz')
+    #fastq.iloc[:,0]
+    subset['fastq_r1']=fastq.iloc[:,0].str.split('/', expand=True).iloc[:,6].str.strip('.gz')
+    subset['fastq_r2']=fastq.iloc[:,1].str.split('/', expand=True).iloc[:,6].str.strip('.gz')
+    subset
+
+    subset_long=pd.melt(subset, id_vars=['study_accession', 'sample_accession', 'experiment_accession', 'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp', 'submitted_ftp', 'sra_ftp', 'Sample', 'tissue'], value_vars=['fastq_r1', 'fastq_r2'], var_name='fastq_path')
+    subset_long
+    left=subset_long[-subset_long['run_accession'].isin(done)]
+    left=left.reset_index()[['study_accession', 'sample_accession', 'experiment_accession', 'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp','submitted_ftp', 'sra_ftp', 'Sample', 'tissue', 'fastq_path', 'value']]
     to_do=len(left)
-    
-    #print out 
-    print(to_do, 'left in sample ', sample)
+    print(sample+' '+str(to_do))
     return(left)
 
 #function that takes in that df, then downloads using ftp 
