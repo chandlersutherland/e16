@@ -15,11 +15,10 @@ module load fastqc
 source activate e16 
 
 #rna 
-OUTPUT_DIR=$base/$sample/rna_${tissue}/fastqc
+OUTPUT_DIR=$base/$sample/fastqc
 mkdir -p $OUTPUT_DIR
-cd $base/$sample/rna_${tissue}/
-FILES=$(find . -type f -name '*fastq' -print)
-
+cd $base/$sample/
+FILES=$(find . -type f -wholename './rna_*/*fq')
 fastqc -o $OUTPUT_DIR -t 24 $FILES 
 
 #em_raw 
