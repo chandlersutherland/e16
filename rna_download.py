@@ -38,9 +38,17 @@ def downloader(left):
         start_time = time.time()
         sample=left.iloc[i, 9]
         tissue=left.iloc[i, 10]
+        run_accession=left.iloc[0,3]
         os.system("mkdir -p /global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue)
         os.chdir("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue)
-
+        
+        corrupt= glob.glob("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_"+tissue+'/'+ run_accession+'*')
+        print('found' + str(len(corrupt)) + 'corrupt files, removing...) 
+        
+        for i in corrupt: 
+            print("removing file "+ i)
+            os.remove(i) 
+        
         r1=left.iloc[i,6].split(';')[0]
         r2=left.iloc[i,6].split(';')[1]
     
