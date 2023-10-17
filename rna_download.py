@@ -3,6 +3,7 @@ import os
 import pandas as pd 
 import time 
 import sys
+import glob
 
 #read in metadata file 
 rna_info=pd.read_csv('/global/home/users/chandlersutherland/e16/rna_metadata.csv', index_col=0)
@@ -33,9 +34,10 @@ rna_info=pd.read_csv('/global/home/users/chandlersutherland/e16/rna_metadata.csv
 #restarting, check what is there and ask to find new stuff again... 
 #system argument should be tissue type 
 tissue=sys.argv[1]
-
+#print(tissue)
 #collect paths of existing downloads
-paths=glob.glob(os.path.join('/global/scratch/users/chandlersutherland/e16/*/rna_'+tissue+'anther/*.gz'))
+paths=glob.glob(os.path.join('/global/scratch/users/chandlersutherland/e16/*/rna_'+tissue+'/*.gz'))
+#print(paths)
 subset=rna_info[rna_info['tissue']==tissue]
 
 #make into a dataframe 
@@ -48,13 +50,16 @@ subset['fastq_r1']=fastq[0].str.split('/', expand=True)[6]
 subset['fastq_r2']=fastq[1].str.split('/', expand=True)[6]
 
 #melt df 
-subset_long=pd.melt(subset, id_vars=['id', 'study_accession', 'sample_accession', 'experiment_accession', 'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp', 'submitted_ftp', 'sra_ftp', 'Sample', 'tissue'],
+subset_long=pd.melt(subset, id_vars=['study_accession', 'sample_accession', 'experiment_accession', 'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp', 'submitted_ftp', 'sra_ftp', 'Sample', 'tissue'],
  value_vars=['fastq_r1', 'fastq_r2'], var_name='fastq_path')
 
 #get just remaining files to download     
 finished_files=done[8]
 left=subset_long[-subset_long['value'].isin(finished_files)]
 left=left.reset_index()[['study_accession', 'sample_accession', 'experiment_accession', 'run_accession', 'tax_id', 'scientific_name', 'fastq_ftp','submitted_ftp', 'sra_ftp', 'Sample', 'tissue', 'fastq_path', 'value']]
+
+len_left=len(left)
+print(str(len_left)+'files left to download for'+tissue)
 
 #finally restart for loop 
 for i in range(0, len(left)):
