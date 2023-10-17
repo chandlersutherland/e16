@@ -19,7 +19,7 @@ count_files=glob.glob('/global/scratch/users/chandlersutherland/e16/'+sample+'/r
 counts=pd.DataFrame()
 for i in range(0, len(count_files)):
     accession=count_files[i].split('/')[6]
-    sample=count_files[i].split('/')[-1].split('_')[0]
+    rep=count_files[i].split('/')[-1].split('_')[0]
     tissue=count_files[i].split('/')[7].split('_')[1]
     
     #read in file 
@@ -31,7 +31,7 @@ for i in range(0, len(count_files)):
     
     #add accession and sample columns 
     count['accession']=accession
-    count['sample']=sample 
+    count['rep']=rep
     count['tissue']=tissue
     
     counts=pd.concat([counts,count])
@@ -46,7 +46,7 @@ merged['RPK']=merged['stranded_1']*1000/merged['gene_length']
 
 #Calculate per million scaling factor for the sample 
 #Count up all the RPK values in a sample and divide this number by 1,000,000. This is your “per million” scaling factor.
-grouped=merged.groupby(['sample'])
+grouped=merged.groupby(['rep'])
 
 tpm=pd.DataFrame()
 for name, group in grouped: 
@@ -55,5 +55,5 @@ for name, group in grouped:
     tpm=pd.concat([tpm, group])
 
 tpm['log2(TPM)']=np.log2(tpm['TPM']+1)
-tpm=tpm[['accession', 'sample', 'tissue', 'name', 'chrom', 'chromStart', 'chromEnd', 'strand', 'gene_length', 'stranded_1', 'TPM', 'log2(TPM)']]
+tpm=tpm[['accession', 'rep', 'tissue', 'name', 'chrom', 'chromStart', 'chromEnd', 'strand', 'gene_length', 'stranded_1', 'TPM', 'log2(TPM)']]
 tpm.to_csv('/global/scratch/users/chandlersutherland/e16/cs_reports/'+sample+'_all_tissue.tsv', sep='\t')
