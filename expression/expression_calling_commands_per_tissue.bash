@@ -20,9 +20,9 @@ module load python
 #sample='CML103' 
 
 #unpigz files 
-#while read tissue; do sbatch --job-name=$sample.$tissue.unpigz \
-#--export=base=$base,sample=$sample,tissue=$tissue -A co_minium -p savio4_htc \
-#--qos minium_htc4_normal unpigz.sh; done < tissues.txt
+while read tissue; do sbatch --job-name=$sample.$tissue.unpigz \
+--export=base=$base,sample=$sample,tissue=$tissue -A co_minium -p savio4_htc \
+--qos minium_htc4_normal unpigz.sh; done < tissues.txt
 
 #wait until complete to launch next jobs 
 until [ ! -f $base/$sample/rna_root/*.fq ]
@@ -37,14 +37,14 @@ while read tissue; do sbatch --job-name=$sample.$tissue.STAR --export=base=$base
 -A co_minium -p savio4_htc --qos minium_htc4_normal expression/STAR.bash; done < tissues.txt 
 
 #wait until complete 
-until [ ! -f $base/$sample/rna_root/*.tab ]
-do
-    sleep 5
-done
-echo "STAR finished, make conglom output file"
+#until [ ! -f $base/$sample/rna_root/*.tab ]
+#do
+#    sleep 5
+#done
+#echo "STAR finished, make conglom output file"
 
 #create output file 
-python expression/tpm_calc.py $sample 
+#python expression/tpm_calc.py $sample 
 
 #QC coverage of each NLR 
 #while read sample; do sbatch --job-name=$sample.coverage --export=base=$base,sample=$sample \
