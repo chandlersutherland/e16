@@ -9,7 +9,8 @@ import numpy as np
 sample=sys.argv[1]
 
 #load bed file 
-bed=pd.read_csv('/global/scratch/users/chandlersutherland/e16/'+sample+'/genome/Zm-'+sample+'-REFERENCE-NAM-1_all_gene.bed', sep='\t', lineterminator='\n')
+bed_path=glob.glob('/global/scratch/users/chandlersutherland/e16/'+sample+'/genome/*all_gene.bed')
+bed=pd.read_csv(bed_path[0], sep='\t', lineterminator='\n')
 bed['gene_length'] = 1 + bed['chromEnd'] - bed['chromStart']
 
 #get all counts files 
