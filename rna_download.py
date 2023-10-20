@@ -72,8 +72,7 @@ def STAR_run(left):
 left=count_left_s(sample)
 #downloader(left)
 
-unpigz_command="sbatch --job-name="+sample+".unpigz --export=base=/global/scratch/users/chandlersutherland/e16,sample="+sample+
-" -A co_minium -p savio4_htc --qos minium_htc4_normal /global/home/users/chandlersutherland/e16/unpigz.sh"
+unpigz_command="sbatch --job-name="+sample+".unpigz --export=base=/global/scratch/users/chandlersutherland/e16,sample="+sample+" -A co_minium -p savio4_htc --qos minium_htc4_normal /global/home/users/chandlersutherland/e16/unpigz.sh"
 #os.system(unpigz_command)
 
 STAR_run(left)
