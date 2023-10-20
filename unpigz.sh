@@ -15,5 +15,5 @@ INPUT=$base/$sample/
 
 cd $INPUT
 
-files=$(find . -type f -wholename '*.gz')
+files=$(find . -type f -wholename './rna_*/*.gz')
 unpigz -f $files 
