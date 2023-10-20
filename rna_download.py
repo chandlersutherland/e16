@@ -34,6 +34,7 @@ def count_left_s(sample):
 
 #function that takes in that df, then downloads using ftp 
 def downloader(left):
+    sample=left.iloc[0,9] # have to assign to get glob to work? 
     for run_accession in left['run_accession'].unique():
         corrupt= glob.glob("/global/scratch/users/chandlersutherland/e16/"+sample+"/rna_*/"+ run_accession+'*')
         print('found' + str(len(corrupt)) + 'corrupt files, removing...')
@@ -50,7 +51,7 @@ def downloader(left):
         
         list=left.iloc[i,6].split(';')[0].split('/')[0:6]
         base='/'.join(list)
-        ex=left.iloc[0,12]
+        ex=left.iloc[i,12]
         
         os.system("wget ftp://"+base+'/'+ex+'.gz')
         file=str(left.iloc[i,12])+'.gz'
