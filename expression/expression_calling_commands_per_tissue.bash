@@ -14,12 +14,19 @@ cd /global/home/users/chandlersutherland/e16/
 base="/global/scratch/users/chandlersutherland/e16"
 module load python 
 
+echo "beginning re-processing of ${sample}"
+
 #first, download problematic rna files (don't have a STAR output) 
-python rna_download.py $sample 
+#python rna_download.py $sample >> /global/scratch/users/chandlersutherland/e16/$sample/rna_download.log
+#actually do this on a download node instead
+
+echo "finished download script"
 
 #unpigz files 
 sbatch --job-name=$sample.unpigz --export=base=$base,sample=$sample -A co_minium -p savio4_htc \
 --qos minium_htc4_normal unpigz.sh
+
+echo "unpigzed"
 
 #wait until complete to launch next jobs 
 until [ ! -f $base/$sample/rna_root/*.fastq ]
