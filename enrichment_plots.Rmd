@@ -1,0 +1,280 @@
+---
+title: "ranked_plots"
+author: "Chandler Sutherland"
+date: "2023-05-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+```
+
+Create a ranked list of genes based on expression for each ecotype 
+```{r}
+tpm <- read.csv('/global/scratch/users/chandlersutherland/e16/cs_reports/rna_tip_tpm.tsv', sep='\t')
+```
+
+```{r}
+avg_tpm <- tpm %>% group_by(accession, name) %>% 
+  summarise(log2.TPM=mean(log2.TPM.),
+            .groups = 'drop')
+
+gene_table <- read.csv('/global/home/users/chandlersutherland/e16/Maize_NLRome_GeneTable.txt', sep='\t') %>% subset(select=c('Gene', 'Ecotype', 'HV'))
+
+avg_tpm$accession <- avg_tpm$accession %>% toupper()
+gene_table$Ecotype <- gene_table$Ecotype %>% toupper()
+gene_table$Gene <- gene_table$Gene %>%  str_replace('ZM', 'Zm') %>% str_replace('AB', 'ab') %>% str_replace("EB", 'eb') %>% str_replace('_P001', '')
+
+merged <- merge(avg_tpm, gene_table, by.x='name', by.y='Gene', all=TRUE)
+
+table <- merged %>% subset(select=c('accession', 'name', 'HV', 'log2.TPM')) %>%
+  mutate(HV=recode(HV, `0` = "non-hv", `1`="hv"))
+
+table$HV[is.na(table$HV)]<-'all_genes'
+table$HV <- factor(table$HV , levels=c("all_genes", "non-hv", "hv"))
+
+unmappable <- c('Zm00039ab351270', 'Zm00026ab135540', 'Zm00036ab418650',
+                'Zm00001eb091500', 'Zm00001eb164880', 'Zm00001eb343890',
+                'Zm00001eb391100', 'Zm00001eb405870', 'Zm00001eb405900',
+                'Zm00001eb405930', 'Zm00033ab429000', 'Zm00029ab367660')
+colnames(table) <- c('Ecotype', 'Gene', 'HV', 'log2_TPM')
+table <- table %>% filter(!Gene %in% unmappable)
+
+B73 <- table %>% filter(Ecotype=='B73')
+
+B73 %>% filter(HV != 'all_genes')
+```
+```{r}
+B73 <- table %>% filter(Ecotype=='B73')
+x <- 'log2_TPM'
+  filt <- B73[,c('Gene', 'HV', x)] 
+  filt <- filt[complete.cases(filt), ]
+  filt <- filt[order(filt[[x]]),]
+  rownames(filt) <- NULL
+  
+  hv <- filt %>% filter(HV == 'hv') %>% pull('Gene')
+  nonhv <- filt %>% filter(HV == 'non-hv') %>% pull('Gene')
+  
+  #assign the rank and calculate normalized rank 
+  filt$rank <- row.names(filt) %>% as.numeric()
+  filt$norm_rank <- filt$rank/nrow(filt)
+  
+  #find the hv and nonhv rank 
+  hv_rank <- filt %>% subset(Gene %in% hv) %>% mutate(set='hv')
+  nhv_rank <- filt %>% subset(Gene %in% nonhv) %>% mutate(set='non-hv')
+  
+  #bind and return ranks
+  rank <- rbind(hv_rank, nhv_rank)
+  rank <- rank[c('norm_rank', 'set')]
+  
+  rank
+  #start with the density plot 
+  p2 <- ggplot(rank, aes(x = norm_rank, col = set)) +
+  geom_density(linewidth=0.5)
+  
+  #Define Axes
+  ymap <- layer_scales(p2)$y$range$range
+
+  exp_enrich_p <- p2 + geom_segment(data= rank %>% filter(set=='hv'), aes(
+      x= norm_rank,
+  		y = ymap[2] + ymap[2]/10,
+  		xend = norm_rank,
+  		yend = ymap[2]+2*ymap[2]/10), 
+  		alpha = 0.75, linewidth=0.25) +
+  	scale_colour_manual(values=c('#F8766D', '#00BFC4')) +
+  	labs(colour = c('hvNLR', 'nonhvNLR')) +
+  geom_segment(data= rank %>% filter(set=='non-hv'), aes(
+      x= norm_rank,
+  		y = ymap[1]-ymap[2]/10,
+  		xend = norm_rank,
+  		yend = ymap[1]-2*ymap[2]/10), alpha = 0.75, linewidth=0.25) +
+  	scale_colour_manual(values=c('#F8766D', '#00BFC4')) +
+  	labs(colour = c('hvNLR', 'nonhvNLR')) +
+  theme_classic()+
+  theme(legend.position='none', text=element_text(size=10), axis.title=element_blank())+
+    ggtitle('B73')
+
+```
+
+
+```{r}
+ranking <- function(table, x){
+  filt <- table[,c('Gene', 'HV', x)] 
+  filt <- filt[complete.cases(filt), ]
+  filt <- filt[order(filt[[x]]),]
+  hv <- filt %>% filter(HV == 'hv') %>% pull('Gene')
+  nonhv <- filt %>% filter(HV == 'non-hv') %>% pull('Gene')
+  rownames(filt) <- NULL
+  
+  #assign the rank and calculate normalized rank 
+  filt$rank <- row.names(filt) %>% as.numeric()
+  filt$norm_rank <- filt$rank/nrow(filt)
+  
+  #find the hv and nonhv rank 
+  hv_rank <- filt %>% subset(Gene %in% hv) %>% mutate(set='hv')
+  nhv_rank <- filt %>% subset(Gene %in% nonhv) %>% mutate(set='non-hv')
+  
+  #bind and return ranks
+  rank <- rbind(hv_rank, nhv_rank)
+  rank <- rank[c('norm_rank', 'set')]
+  
+  rank
+}
+
+b73_rank <- ranking(B73, 'log2_TPM')
+B97 <- table %>% filter(Ecotype=='B97')
+b97_rank <- ranking(B97, 'log2_TPM')
+
+```
+
+
+```{r}
+p2 <- ggplot(b73_rank, aes(x = norm_rank, col = set)) +
+  geom_density(linewidth=0.25)
+  	#stat_density(aes(y = ..density..), geom = 'line', position = 'identity', linewidth=0.25)
+
+ymap <- layer_scales(p2)$y$range$range
+
+#Define Axes
+
+exp_enrich_p <- p2 + geom_segment(data= b73_rank %>% filter(set=='hv'), aes(
+      x= norm_rank,
+  		y = ymap[2] + ymap[2]/10,
+  		xend = norm_rank,
+  		yend = ymap[2]+2*ymap[2]/10), 
+  		alpha = 0.75, linewidth=0.25) +
+  	scale_colour_manual(values=c('#F8766D', '#00BFC4')) +
+  	labs(colour = c('hvNLR', 'nonhvNLR')) +
+geom_segment(data= b73_rank %>% filter(set=='non-hv'), aes(
+      x= norm_rank,
+  		y = ymap[1]-ymap[2]/10,
+  		xend = norm_rank,
+  		yend = ymap[1]-2*ymap[2]/10), alpha = 0.75, linewidth=0.25) +
+  	scale_colour_manual(values=c('#F8766D', '#00BFC4')) +
+  	labs(colour = c('hvNLR', 'nonhvNLR')) +
+  theme_classic()+
+  theme(legend.position='none', text=element_text(size=10), axis.title=element_blank())
+
+exp_enrich_p
+```
+
+```{r}
+#write a function that takes in a per accession tpm table, and returns a plot 
+rank_n_plot <- function(table_accession, column){
+  ranked <- ranking(table_accession, column)
+  accession <- table_accession$Ecotype %>% unique()
+  #start with the density plot 
+  p2 <- ggplot(ranked, aes(x = norm_rank, col = set)) +
+  geom_density(linewidth=0.5)
+  
+  #Define Axes
+  ymap <- layer_scales(p2)$y$range$range
+
+  exp_enrich_p <- p2 + geom_segment(data= ranked %>% filter(set=='hv'), aes(
+      x= norm_rank,
+  		y = ymap[2] + ymap[2]/10,
+  		xend = norm_rank,
+  		yend = ymap[2]+2*ymap[2]/10), 
+  		alpha = 0.75, linewidth=0.25) +
+  	scale_colour_manual(values=c('#F8766D', '#00BFC4')) +
+  	labs(colour = c('hvNLR', 'nonhvNLR')) +
+  geom_segment(data= ranked %>% filter(set=='non-hv'), aes(
+      x= norm_rank,
+  		y = ymap[1]-ymap[2]/10,
+  		xend = norm_rank,
+  		yend = ymap[1]-2*ymap[2]/10), alpha = 0.75, linewidth=0.25) +
+  	scale_colour_manual(values=c('#F8766D', '#00BFC4')) +
+  	labs(colour = c('hvNLR', 'nonhvNLR')) +
+  theme_classic()+
+  theme(legend.position='none', text=element_text(size=10), axis.title=element_blank())+
+    ggtitle(accession[1])
+  return(exp_enrich_p)
+}
+
+rank_n_plot(table %>% filter(Ecotype=='KI3'), 'log2_TPM')
+```
+```{r}
+myplots <- list()  # new empty list
+ecotypes <- table$Ecotype %>% unique()
+
+for (i in 1:length(ecotypes)) {
+  test <- table %>% filter(Ecotype==ecotypes[i])
+    p1 <- rank_n_plot(test, 'log2_TPM')
+    print(p1)
+    myplots[[i]] <- p1  # add each plot into plot list
+}
+```
+
+```{r}
+table %>% filter(HV != 'all_genes') %>% group_by(Ecotype, HV) %>% count()
+```
+
+```{r,fig.width=18,fig.height=12}
+n <- length(myplots)
+nCol <- floor(sqrt(n))
+do.call("grid.arrange", c(myplots, ncol=nCol))
+```
+
+```{r}
+rank_n_plot(table, 'log2_TPM')
+```
+
+
+Repeat for methylation 
+```{r}
+CpG <- read.csv('/global/scratch/users/chandlersutherland/e16/cs_reports/CpG_meth.tsv', sep='\t')
+CpG$accession %>% unique()
+```
+
+```{r}
+avg_cpg <- CpG %>% group_by(accession, name) %>% 
+  summarise(CpG=mean(meth_percentage),
+            .groups = 'drop')
+
+avg_cpg$accession <- avg_cpg$accession %>% toupper()
+
+cpg_merged <- merge(avg_cpg, gene_table, by.x='name', by.y='Gene', all=TRUE)
+
+cpg_table <- cpg_merged %>% subset(select=c('accession', 'name', 'HV', 'CpG')) %>%
+  mutate(HV=recode(HV, `0` = "non-hv", `1`="hv"))
+
+cpg_table$HV[is.na(cpg_table$HV)]<-'all_genes'
+cpg_table$HV <- factor(cpg_table$HV , levels=c("all_genes", "non-hv", "hv"))
+
+colnames(cpg_table) <- c('Ecotype', 'Gene', 'HV', 'CpG')
+
+cpg_table %>% filter(Ecotype=='B73')
+avg_cpg %>% filter(accession=='B73')
+CpG%>% filter(accession=='B73')
+```
+
+```{r}
+cpg_plots <- list()  # new empty list
+ecotypes <- cpg_table$Ecotype %>% unique() %>% na.omit()
+
+for (i in 1:length(ecotypes)) {
+  test <- cpg_table %>% filter(Ecotype==ecotypes[i])
+    p1 <- rank_n_plot(test, 'CpG')
+    print(p1)
+    cpg_plots[[i]] <- p1  # add each plot into plot list
+}
+```
+
+```{r}
+cpg_table %>% filter(Ecotype=='OH7B')%>% filter(HV=='hv')
+```
+```{r,fig.width=18,fig.height=12}
+n <- length(cpg_plots)
+nCol <- floor(sqrt(n))
+do.call("grid.arrange", c(cpg_plots, ncol=nCol))
+```
+```{r}
+cpg_table %>% filter(HV != 'all_genes') %>% group_by(Ecotype, HV) %>% count()
+```
+

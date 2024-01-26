@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 Maize_NLRome_GeneTable.txt
+=======
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+>>>>>>> f8e4ec6b9349d80ed8b1fef892c52f91fc1b979d
