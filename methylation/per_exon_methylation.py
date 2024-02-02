@@ -55,7 +55,7 @@ def cg_average(df):
         else:
             continue
     avg_cpg_df = pd.DataFrame.from_dict(avg_cpg)
-    avg_cpg_df['count'] == 'NA'
+    #avg_cpg_df['count'] == 'NA'
     return avg_cpg_df
 
 if context=='CpG':
@@ -83,56 +83,47 @@ def exon_namer(pos, met):
     start = pos.iloc[j, 1]
     end = pos.iloc[j, 2]
     exon = pos.iloc[j, 5]
-    met.loc[
-      (met['start_pos'].between(start,end)), 'Exon'] = exon
-  return met.dropna()
-  
-#applies namer to each broken chromosome, then re-concatenates to a final value 
-# def bring_together(pos_chroms, df):
-#   final = pd.concat(
-#     [gene_namer(pos_chroms[i], break_chroms(df, chroms)[i]) for i in range(0,5)]
-#     )
-#   return final.sort_values('Gene').reset_index()
-
-# #Applies bring_together, and aggregates by gene to return average methylation per gene and the count of high cov cytosines per gene   
-# def merge(df, pos_chroms):
-#   #cov_cpg2 = df.rename(columns={"start_pos":"Pos"})
-#   cov_cpg3 = bring_together(pos_chroms, cov_cpg2).reset_index()
-
-#   #add in a line that creates a "Gene" column from "Exon"
-
-
-#   #add in a line that does the high cov CG count per gene 
-#   cpg_per_gene = cov_cpg3.groupby(['Chrom', 'Gene']).agg({
-#       'meth_percentage': ['mean', 'count']
-#   }).reset_index()
-
-#   return cpg_per_gene
+    met_named=met #as written now, this overwrites met. 
+    met_named.loc[
+      (met_named['start_pos'].between(start,end)), 'Exon'] = exon
+  return met_named.dropna()
 
 pos_chroms = break_chroms(all_positions, chroms)  
 met_chroms= break_chroms(met, chroms)
 print('Chromosomes broken')
 
 def combine(pos_chroms, met_chroms, chrom_number):
+  print('chrom number: '+str(chrom_number))
+
+  #check if there are exons on this chromosome 
   if pos_chroms[chrom_number].empty== True:
+    print('no exons on this chromosome')
     final=pd.DataFrame()
   
+  #check if there are methylated cytosines on this chromosome
+  elif met_chroms[chrom_number].empty== True:
+    print('no methylation on this chromosome')
+    final=pd.DataFrame()
+
+  #if there are, run exon namer 
   else: 
+    chrom_name=pos_chroms[chrom_number]['Chrom'].unique()[0]
+    print('chrom name: '+chrom_name)
     print('starting '+pos_chroms[chrom_number].iloc[0,0])
 
     final=exon_namer(pos_chroms[chrom_number], met_chroms[chrom_number])
-    if len(final) == 0: #case where there are no methylated cytosines in positions 
-      #print('no cytosines found')
-      final=pd.DataFrame()
     
+    #check if there are methylated chromosomes inside exons 
+    if len(final) == 0: #case where there are no methylated cytosines in positions 
+      final=pd.DataFrame()
+
     else: 
       #print('some cytosines found')
-      final.sort_values('Exon').reset_index()
       final[['Gene', 'transcript_exon']]=final['Exon'].str.split('_', expand=True)
       final[['transcript', 'del', 'exon_num']]=final['transcript_exon'].str.split('.', expand=True)
       final=final[final['transcript']=='T001'] #filter to just T1 to not overrepresent any exons 
 
-      #print('aggregate over exons')
+      print('aggregate '+chrom_name+' over exons')
       final=final.groupby(['Chrom', 'Gene']).agg({'meth_percentage':['mean', 'count']}).reset_index()
   return final 
 
