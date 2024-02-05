@@ -25,6 +25,9 @@ trim_output=$trim_input/trimmed
 mkdir -p $trim_output
 cd $trim_input
 
+#unpigz the directory 
+#unpigz * 
+
 #run trim galore in default, paired end mode 
 FILES=$(find . -maxdepth 1 -type f -name '*_1.fastq' -print)
 REPS=$(basename -a -s _1.fastq $FILES)

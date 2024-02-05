@@ -11,12 +11,15 @@
 #SBATCH --output=/global/home/users/chandlersutherland/slurm_stdout/slurm-%j.out
 
 cd /global/home/users/chandlersutherland/e16/
+
 #Define the input directory, with fastq files ready for trimming
 base="/global/scratch/users/chandlersutherland/e16"
 
-#while read sample; do sbatch --job-name=$sample.genome --export=base=$base,sample=$sample \
-#-A fc_kvkallow methylation/bismark_genome_preparation.bash; done < sample.txt 
+#if have not run before, prepare each genome for bismark 
+while read sample; do sbatch --job-name=$sample.genome --export=sample=$sample,base=$base \
+-A fc_kvkallow methylation/bismark_genome_preparation.bash; done < sample.txt 
 
+#trim the reads using trim galore 
 while read sample; do sbatch --job-name=$sample.trim_galore --export=base=$base,sample=$sample \
  -A fc_kvkallow methylation/trim_galore.sh; done < sample.txt
 
@@ -25,27 +28,21 @@ while read sample; do sbatch --job-name=$sample.bismark --export=base=$base,samp
 methylation/bismark.bash; done < sample.txt 
 
 #check read coverage of NLRs, generating a clean_coverage.tsv file for the bismark output  
-
 while read sample; do sbatch --job-name=$sample.nlr_coverage --export=sample=$sample -A co_minium \
 methylation/samtools_coverage_runner.bash; done < sample.txt
 
+#deduplicate reads 
 while read sample; do sbatch --job-name=$sample.dedup --export=sample=$sample -A co_minium \
 methylation/bismark_deduplicate.bash; done < sample.txt
 
 #finish extraction to coverage files, and filter to >5 reads per cytosine 
-#while read sample; do sbatch --job-name=$sample.extract --export=extraction_output=$extraction_output,sample=$sample\
-# -A co_minium /global/home/users/chandlersutherland/nlr_features/methylation/bismark_2_bedgraph.bash; done < samples.txt
-
-#generate bigwig files for viewing in IGV of the high coverage extracted cytosines 
-#bigwig_input=$extraction_output/bedGraph_highcov
-
-#while read sample; do sbatch --job-name=$sample.bw --export=bigwig_input=$bigwig_input,sample=$sample -A co_minium \
-#/global/home/users/chandlersutherland/nlr_features/methylation/bed_2_bw.bash; done < samples.txt 
+while read sample; do sbatch --job-name=$sample.extract --export=sample=$sample\
+ -A co_minium methylation/bismark_2_bedgraph.bash; done < samples.txt
 
 #calculate the per gene methylation percentage for each context 
-#cov_dir='/global/scratch/users/chandlersutherland/e14/bismark/extraction/drdd/bedGraph_highcov'
-#gene_positions='/global/scratch/users/chandlersutherland/Athaliana/Atha_genes.bed'
+while read sample; do sbatch --job-name=$sample.per_exon_meth --sample=$sample -A co_minium \
+methylation/per_exon_methylation_runner.bash; done < samples.txt 
 
-
-#while read sample; do sbatch --job-name=$sample.per_gene_meth --export=cov_dir=$cov_dir,sample=$sample,gene_positions=$gene_positions -A co_minium \
-#/global/home/users/chandlersutherland/nlr_features/methylation/per_gene_methylation_runner.bash; done < samples.txt 
+#generate bigwig files for viewing in IGV of the high coverage extracted cytosines 
+# while read sample; do sbatch --job-name=$sample.bw --export=sample=$sample -A co_minium \
+# methylation/bed_2_bw.bash; done < samples.txt 
