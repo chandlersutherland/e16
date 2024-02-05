@@ -13,7 +13,55 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggplot2)
 library(gridExtra)
+library(singscore)
 ```
+
+```{r}
+CML247 <- read.csv('/global/scratch/users/chandlersutherland/e16/cs_reports/CML247_all_tissue.tsv', sep='\t')
+accession_name <- CML247[1,1]
+accession_name[[1]]
+gene_table <- read.csv('/global/home/users/chandlersutherland/e16/Maize_NLRome_GeneTable.txt', sep='\t') %>% subset(select=c('Gene', 'Ecotype', 'HV'))
+
+gene_table$Ecotype <- gene_table$Ecotype %>% toupper()
+gene_table$Gene <- gene_table$Gene %>%  str_replace('ZM', 'Zm') %>% str_replace('AB', 'ab') %>% str_replace("EB", 'eb') %>% str_replace('_P001', '')
+
+#merged <- merge(avg_tpm, gene_table, by.x='name', by.y='Gene', all=TRUE)
+
+singscore_enrich = function(accession_df, accession_name, gene_set){
+  #generate gene sets
+  #remove unmappable genes 
+  #print(accession_name)
+  hv_names <- gene_table %>% filter(ecotype==accession_name) %>% filter(HV == 'hv') %>% pull('Gene')
+  hv_geneset <- GeneSet(hv_names, geneIdType=SymbolIdentifier())
+  
+  matrix <- tpm %>% filter(accession==accession_name)%>% subset(select=c('sample', 'name', 'TPM')) %>% pivot_wider(names_from=sample, values_from=TPM)
+  matrix <- column_to_rownames(matrix, 'name')
+  matrix
+
+  ranked <- rankGenes(matrix)
+
+  hv_sing <- simpleScore(ranked, upSet=hv_geneset)
+  nonhv_sing <- simpleScore(ranked, nonhv_geneset)
+
+  hv_null <- generateNull(rankData=ranked, upSet=hv_geneset)
+  hv_p <- getPvals(hv_null, hv_sing)
+  consv <- max(hv_p)
+  return(consv)
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Create a ranked list of genes based on expression for each ecotype 
 ```{r}
@@ -50,6 +98,24 @@ B73 <- table %>% filter(Ecotype=='B73')
 
 B73 %>% filter(HV != 'all_genes')
 ```
+
+```{r}
+#read in B73 gene names 
+B73_names <- read.csv('/global/scratch/users/chandlersutherland/e16/B73/genome/gene_names.txt') %>% subset(select=c('gene_model', 'locus_symbol')) %>% rename('Gene'='gene_model', 'gene_name'='locus_symbol')
+B73_names
+
+named_B73 <- merge(B73, B73_names, on='Gene', all.x=TRUE)
+named_B73 %>% filter(gene_name=='rp1')
+named_B73_nlrs <- named_B73 %>% filter(HV != 'all_genes')
+
+B73_names %>% filter(Gene=='Zm00001eb405930')
+B73_names %>% filter(gene_name=='rp1')
+
+gene_table %>% filter(Gene=='Zm00001eb405930')
+
+B73 %>% filter(Gene=='Zm00001eb405930')
+```
+
 ```{r}
 B73 <- table %>% filter(Ecotype=='B73')
 x <- 'log2_TPM'
@@ -224,6 +290,11 @@ do.call("grid.arrange", c(myplots, ncol=nCol))
 ```{r}
 rank_n_plot(table, 'log2_TPM')
 ```
+```{r}
+#make a table of p values for permutation test of difference in means 
+
+```
+
 
 
 Repeat for methylation 
