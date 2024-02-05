@@ -22,7 +22,7 @@ cd $genome_dir
 lambda=/global/scratch/users/chandlersutherland/e16/em_control/lambda.fa
 puc19=/global/scratch/users/chandlersutherland/e16/em_control/pUC19.fa
 
-genome=$(find . -type f -name "*.fa")
+genome=$(find . -maxdepth 1 -type f -name "*.fa")
 base=$(basename $genome .fa)
 
 #bismark requires a genome directory as an input, so make a sub directory to put lambda/pUC19 genome in 
