@@ -17,7 +17,6 @@ source activate e14
 
 #make appropriate directories for output of deduplicate 
 deduplicate_input=/global/scratch/users/chandlersutherland/e16/${sample}/em
-cd $deduplicate_input/bismark 
 mkdir -p $deduplicate_input/deduplicate
 
 #establish the extraction output directory 
@@ -25,6 +24,7 @@ extraction_output=$deduplicate_input/extract
 mkdir -p $extraction_output
 
 #define the input files 
+cd $deduplicate_input/bismark 
 a=$(find . -type f -name '*_1_val_1_bismark_bt2_pe.bam')
 prefix=$(basename -s .bam $a)
 
@@ -35,10 +35,10 @@ cores=$(expr $SLURM_NTASKS / $num_reps)
 #define deduplicator/extractor function 
 DEDUP_EXTRA () {
 
-	deduplicate bismark 
+	#deduplicate bismark 
 	deduplicate_bismark -p \
 		--output_dir  $deduplicate_input/deduplicate \
-		./${1}
+		./${1}.bam
 	echo "finished deduplication of ${1}" 
 	
 	bismark_methylation_extractor -p \
