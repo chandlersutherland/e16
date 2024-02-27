@@ -1,0 +1,63 @@
+---
+title: "rp1_cluster"
+author: "Chandler Sutherland"
+date: "2024-02-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Goal: create gene diagrams of rp1 using the gggenes package. Color the genes by expression state, add methylation information somehow
+
+Load packages: 
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(ggsignif)
+library(ggpubr)
+library(introdataviz)
+library(patchwork)
+library(gggenes)
+```
+
+Load intermediate data. Goal, get a table with the coordinates of each Rp1 gene from each genome, with expression state. 
+```{r}
+coordinates <- read_csv("C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//intermediate_data//nlr_coords.csv")
+rp1 <- coordinates %>% filter(Clade_adj == 'Rp1-like') %>% filter(chrom=='chr10')
+rppc <- coordinates %>% filter(Clade_adj == 'RppC-like') %>% filter(chrom=='chr10')
+```
+
+```{r}
+ggplot(rp1[1:20,], aes(xmin = chromStart, xmax = chromEnd, y = accession, fill = expr_category)) +
+  geom_gene_arrow() +
+  facet_wrap(~ accession, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3")+
+  theme_genes()+
+  theme(legend.position='right', 
+        strip.background = element_blank(), strip.text = element_blank())
+  
+
+b73 <- rp1 %>% filter(accession=='B73')
+b73 %>% mutate(length=chromEnd-chromStart)
+```
+```{r}
+ggplot(rp1[1:50,], aes(xmin = chromStart, xmax = chromEnd, y = accession, fill = expr_category)) +
+  geom_gene_arrow() +
+  facet_wrap(~ accession, scales = "free", ncol = 1) +
+  scale_fill_brewer(palette = "Set3")+
+  theme_genes()+
+  theme(legend.position='right', 
+        strip.background = element_blank(), strip.text = element_blank())
+```
+
+Actually, check out the gggenomes package.
+Also, need to go back into the cluster and pull from bed file all the genes within a reasonable buffer on chromosome 10. Maybe grab everything from chromosome 10 and import, then play in here to get a reasonable chunk from each genome 
+```{r}
+library(gggenomes)
+
+data(package='gggenomes')
+
+```
+
