@@ -1,0 +1,524 @@
+---
+title: "methylation"
+author: "Chandler Sutherland"
+date: "2024-01-26"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(ggsignif)
+library(ggpubr)
+library(introdataviz)
+library(patchwork)
+```
+
+Goal: import and compare CG methylation, CHH methylation, and CHG methylation at hv and non-hvNLRs across accessions
+```{r}
+CpG <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CpG_meth.tsv', sep='\t') 
+CHG <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CHG_meth.tsv', sep='\t') 
+CHH <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CHH_meth.tsv', sep='\t') 
+
+#calculate average per gene %methylation weighted by count for each context 
+CpG_group <- CpG %>%
+  group_by(name, accession) %>% 
+  summarize(meth_percentage=weighted.mean(meth_percentage, count/sum(count))) %>%
+  mutate(context='CpG')
+
+CHG_group <- CHG %>%
+  group_by(name, accession) %>% 
+  summarize(meth_percentage=weighted.mean(meth_percentage, count/sum(count))) %>%
+  mutate(context='CHG')
+
+CHH_group <- CHH %>%
+  group_by(name, accession) %>% 
+  summarize(meth_percentage=weighted.mean(meth_percentage, count/sum(count))) %>%
+  mutate(context='CHH')
+
+#combine to one table 
+methylation <- rbind(CpG_group, CHG_group, CHH_group)
+
+#write out 
+write.csv(methylation, "C:\\Users\\chand\\Box Sync\\Krasileva_Lab\\Research\\chandler\\Krasileva Lab\\E16\\intermediate_data\\percent_methylation.csv")
+```
+
+```{r}
+#subset to just NLRs, add clean clade info 
+gene_table <- read.csv('Maize_NLRome_GeneTable.txt', sep='\t') %>% subset(select=c('Gene', 'Ecotype', 'HV', 'Clade'))
+gene_table$Ecotype <- gene_table$Ecotype %>% toupper()
+gene_table$Gene <- gene_table$Gene %>% 
+  str_replace('ZM', 'Zm') %>% 
+  str_replace('AB', 'ab') %>% 
+  str_replace("EB", 'eb') %>% 
+  str_replace('_P001', '')
+
+subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt', col_names=c('Assembly', 'Grin', 'accession_id', 'source', 'cross_reference', 'subpopulation', 'stock'), skip=1) %>% separate(Assembly, sep='-', into=c(NA, 'accession', NA, NA, NA))
+subpopulations$accession <- subpopulations$accession %>% toupper()
+subpopulations <- subpopulations %>% subset(select=c('accession', 'subpopulation'))
+subpopulations[nrow(subpopulations) + 1,] = list('B73', 'Stiff stalk')
+subpopulations <- subpopulations %>% mutate(subpopulation =recode(subpopulation, 'Temporate/tropical'='Temporate/Tropical'))%>% 
+  mutate(subpopulation =recode(subpopulation, 'Temporate/Tropical'='Mixed', 'Non-stiff-stalk'='Non-stiff stalk', 'Sweet'='Sweetcorn'))
+subpopulations$subpopulation <- factor(subpopulations$subpopulation, levels=c('Stiff stalk', 'Non-stiff stalk', 'Mixed', 'Popcorn', 'Sweetcorn', 'Tropical'))
+
+nlr_meth <- methylation %>% 
+  filter(name %in% gene_table$Gene) %>% 
+  merge(gene_table, by.x = 'name', by.y= 'Gene') %>%
+  mutate(Clade_adj=recode(Clade, 'Int3480_75_130_L_68'='Int3480', 
+                          'Int4787_129_172_L_83'='RppM-like', 
+                          'Int6329_131_253_L_122_209_L_80_142_L_61'='RppC-like', 'Int6329_131_253_L_122_209_R_35_43_R_23'='RppC-like',
+                          'Int6329_131_253_L_122_209_L_80_142_R_18'='RppC-like',
+                          'Int6648_150_178_L_128_144_R_93'='Rp1-like')) %>% merge(subpopulations)
+```
+
+```{r}
+nlr_meth <- nlr_meth %>% mutate(HV=case_match(HV, 0 ~ 'non-hv', 
+                                  1 ~ 'hv'))
+
+nlr_meth$HV <- factor(nlr_meth$HV, levels=c('non-hv', 'hv'))
+
+ggplot(nlr_meth) +
+  introdataviz::geom_split_violin(aes(x = Ecotype, y = meth_percentage, fill = HV), 
+                                  alpha=0.4, trim = TRUE, scale="width")+
+  stat_summary(mapping=aes(x = Ecotype, y = meth_percentage, fill=HV),
+               fun = median, geom = "point", show.legend = F, shape=21, color='black',
+               position = position_dodge(.175)) +
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic(base_size = 10)+
+  xlab('')+
+  theme(legend.key.size = unit(.25, "cm"), 
+        legend.title=element_blank(), 
+        legend.position='bottom', 
+        text = element_text(size=10), 
+        legend.spacing.y = unit(0, "cm"), 
+        legend.spacing.x=unit(0.1, 'cm'), 
+        legend.margin=margin(-3,0,0,0), 
+        legend.box.margin=margin(-12,-12,0,0), 
+        axis.text.y=element_text(size=10))+
+  ylim(0,100)+
+  facet_grid(context ~ subpopulation, scales='free', space='free')
+
+cpg <- nlr_meth %>% filter(context=='CpG') %>% unique()
+ggplot(cpg) +
+  introdataviz::geom_split_violin(aes(x = Ecotype, y = meth_percentage, fill = HV), 
+                                  alpha=0.4, trim = TRUE, scale="width")+
+  stat_summary(mapping=aes(x = Ecotype, y = meth_percentage, fill=HV),
+               fun = median, geom = "point", show.legend = F, shape=21, color='black',
+               position = position_dodge(.175)) +
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic(base_size = 10)+
+  xlab('')+
+  ylab('% CG methylation')+
+  theme(legend.key.size = unit(.25, "cm"), 
+        legend.title=element_blank(), 
+        legend.position='bottom', 
+        text = element_text(size=10), 
+        legend.spacing.y = unit(0, "cm"), 
+        legend.spacing.x=unit(0.1, 'cm'), 
+        legend.margin=margin(-3,0,0,0), 
+        legend.box.margin=margin(-12,-12,0,0), 
+        axis.text.y=element_text(size=10), 
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+#  ylim(0,100)+
+  facet_grid(~subpopulation, scales='free', space='free')+
+  geom_text(data=annotation_df, 
+            mapping=aes(x=x, y=y, label=stars),
+            size = 10/.pt,
+            show.legend=FALSE)
+
+nlr_meth$context <- factor(nlr_meth$context, levels=c('CpG', 'CHG', 'CHH'))
+
+general_methylation <- nlr_meth %>%
+  ggplot(aes(x=context, y=meth_percentage, fill=HV))+
+  introdataviz::geom_split_violin(aes(x = context, y = meth_percentage, fill = HV), 
+                                  alpha=0.4, trim = TRUE, scale="width")+
+  geom_boxplot(width=0.3, outlier.size=0.4)+
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  ylab('% Methylation')+
+  xlab('')+
+  scale_x_discrete(labels=c('CpG'='CG'))+
+  theme_classic()+
+  theme(legend.title=element_blank(),
+        legend.position='right',
+        text = element_text(size=10))
+
+ggsave('C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//methylation_1.png', plot=general_methylation, dpi='retina', width=3.25, height=2)
+
+
+compare_means(meth_percentage~HV, data=nlr_meth, method='wilcox.test', paired=F, group.by='context', p.adjust.method = 'BH')
+```
+
+
+```{r}
+sig <- compare_means(meth_percentage~HV, cpg, method = 'wilcox.test', paired=F, group.by='accession', p.adjust.method = 'BH')
+
+#order <- merge(sig_table, hv_rel, by='tissue') %>% arrange(dev_order)
+#order$clean_tissue <- factor(order$clean_tissue, levels=c(order %>% pull(clean_tissue) %>% unique()))
+
+order <- merge(sig, nlr_meth, by='accession') %>% arrange(subpopulation)
+sub_pop_order <- order %>% pull(accession) %>% unique()
+p_val <- order %>% subset(select=c(subpopulation, accession, p.adj)) %>%  unique() 
+
+subpop=levels(factor(p_val$subpopulation))
+i=0
+annotation_df = ''
+for (sub in subpop){
+  print(sub)
+  
+  df <- p_val %>% filter(subpopulation==sub) 
+  group_n <- nrow(df)
+  annot_df <- df %>% 
+    mutate(x=seq(from=1, to=group_n)) %>%
+    mutate(y=109.5) %>% 
+    mutate(stars=case_when(p.adj < .001 ~'***', 
+                         p.adj >= .001 & p.adj < .01 ~ '**', 
+                         p.adj >= .01 & p.adj < .05 ~ '*', 
+                         p.adj > .05 ~ 'ns'
+                         ))
+  #print(annot_df)
+  if (i == 0){
+    annotation_df = annot_df
+    } else {
+    annotation_df = rbind(annotation_df, annot_df)
+    }
+  i=+1
+}
+```
+Only genes with at least 40 cytosines in the CG context and 40 cytosines in the CHG context spanned by EM-seq reads were assigned methylation epialleles. UM epialleles were defined by both mCG and mCHG less than 0.05, gbM epialleles by mCG higher than 0.2 and mCHG less than 0.05, and teM epialleles by both mCG and mCHG methylation levels higher than 0.4
+
+```{r}
+classified <- nlr_meth %>% unique() %>% 
+  pivot_wider(names_from=context, values_from=meth_percentage) %>%
+  mutate(class=case_when((CpG < 5 & CHG < 5) ~'uM',
+                           (CpG > 20 & CHG < 5) ~ 'gbM',
+                           (CpG > 40 & CHG > 40) ~ 'teM',
+                           .default = 'ambiguous')) 
+
+classified %>% group_by(class) %>% summarize(n=n())
+```
+
+
+```{r}
+all_classified <- methylation %>% unique() %>% 
+  pivot_wider(names_from=context, values_from=meth_percentage) %>%
+  mutate(class=case_when((CpG < 5 & CHG < 5) ~'uM',
+                           (CpG > 20 & CHG < 5) ~ 'gbM',
+                           (CpG > 40 & CHG > 40) ~ 'teM',
+                           .default = 'ambiguous')) 
+
+all_classified %>% filter(accession=='B73') %>% group_by(class) %>% summarize(n=n())
+all_classified %>% filter(accession=='B73') %>% filter(class=='ambiguous')
+```
+
+```{r}
+all_classified %>%
+  filter(accession=='B73')%>%
+  ggplot()+
+  geom_point(aes(x=CpG, y=CHG, color=class), alpha=0.1, size=0.5)+
+  ylim(0,100)+
+  xlim(0,100)+
+  theme(legend.position = 'right')
+
+all_classified %>% 
+  ungroup() %>% 
+#  sample_n(10000) %>% 
+  ggplot() +
+  geom_density_2d(aes(x=CpG, y=CHG), bins=1000, color='grey', lwd=0.5)+
+  geom_point(aes(x=CpG, y=CHG, color=class), alpha=0.1, size=0.5)
+  
+ggplot()+
+  geom_density2d(all_classified, mapping=aes(x=CpG, y=CHG), bins=1500, color='grey',  lwd=0.5)+
+  geom_point(classified, mapping=aes(x=CpG, y=CHG, color=HV), size=0.75)+
+  ylim(0,100)+
+  xlim(0,100)+
+  theme(legend.position = 'right')+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic()
+```
+
+```{r}
+classified %>% group_by(class, HV) %>% summarize(n=n())
+ggplot(classified %>% filter(class=='gbM')) +
+  introdataviz::geom_split_violin(aes(x = accession, y = CpG, fill = HV), 
+                                  alpha=0.4, trim = TRUE, scale="width")+
+  stat_summary(mapping=aes(x = accession, y = CpG, fill=HV),
+               fun = median, geom = "point", show.legend = F, shape=21, color='black',
+               position = position_dodge(.175)) +
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic(base_size = 10)+
+  xlab('')
+
+ggplot(classified, aes(x=HV, y=CpG, fill=HV)) +
+  geom_violin(alpha=0.4, trim=T)+
+  geom_boxplot(width=0.25)+
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic(base_size = 10)+
+  xlab('')+
+  geom_signif(comparisons=c('non-hv', 'hv'))+
+  facet_wrap(~class)
+
+compare_means(CpG~HV, classified, method='wilcox.test', paired=F, group.by = 'class', p.adjust.method ='BH')
+```
+
+```{r}
+nlr_classified %>% group_by(HV, Clade_adj, class) %>% summarize(n=n()) %>% mutate(percent=n/sum(n)*100) %>%
+  group_by(HV, class) %>% 
+  mutate(rank=rank(percent)) %>%
+  mutate(Clade_adj=reorder(Clade_adj, -rank)) %>%
+  ungroup() %>%
+  ggplot()+
+  geom_col(aes(x=Clade_adj, y=percent, fill=class))
+```
+
+
+```{r}
+proportion <- classified %>% 
+  group_by(HV,class) %>% summarize(n=n()) %>% mutate(percent=n/sum(n)*100) %>%
+  ggplot()+
+  geom_col(aes(x=HV, y=percent, fill=class))+
+  xlab('')+
+  ylab('Percent')+
+  theme(text=element_text(size=10), 
+        legend.title=element_blank())+
+  theme_classic()
+
+ggsave('C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//methylation_2.png', plot=proportion, dpi='retina', width=3.25, height=2)
+```
+
+```{r}
+by_category <- read.csv("C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//intermediate_data//nlr_tpm.csv")
+
+per_meth_cat <- classified %>% 
+  group_by(HV, Clade_adj, class) %>% 
+  summarize(n=n()) %>% 
+  mutate(percent=n/sum(n)*100) %>%
+  mutate(type='meth')
+per_expr_cat <- by_category %>% mutate(Clade_adj=recode(Clade, 'Int3480_75_130_L_68'='Int3480', 
+                          'Int4787_129_172_L_83'='RppM-like', 
+                          'Int6329_131_253_L_122_209_L_80_142_L_61'='RppC-like', 'Int6329_131_253_L_122_209_R_35_43_R_23'='RppC-like',
+                          'Int6329_131_253_L_122_209_L_80_142_R_18'='RppC-like',
+                          'Int6648_150_178_L_128_144_R_93'='Rp1-like')) %>% 
+  group_by(HV, Clade_adj, expr_category) %>% summarize(n=n()) %>% mutate(percent=n/sum(n)*100) %>%
+  mutate(type='expr') %>%
+  rename('class'=expr_category)
+
+both_category <- rbind(per_meth_cat, per_expr_cat)
+
+both_category %>%
+  filter(HV=='hv')%>%
+  group_by(HV, class) %>% 
+  mutate(rank=rank(percent)) %>%
+  mutate(Clade_adj=reorder(Clade_adj, -rank)) %>%
+  ungroup() %>%
+  ggplot()+
+  geom_col(aes(x=type, y=percent, fill=class))+
+  xlab('')+
+  ylab('% of Clade')+
+  facet_wrap(~Clade_adj, ncol=1)+
+  theme_classic()+
+  theme(text=element_text(size=10), 
+        legend.title=element_blank(), 
+        axis.text.x=element_blank())
+```
+
+
+```{r}
+per_meth_cat <- per_meth_cat %>%
+  group_by(HV, class) %>% 
+  mutate(rank=rank(percent)) %>%
+  mutate(Clade_adj=reorder(Clade_adj, -rank)) %>%
+  ungroup()
+
+
+clade_order <- per_meth_cat$Clade_adj %>% unique()
+per_expr_cat$Clade_adj <- factor(per_expr_cat$Clade_adj, levels=clade_order)
+
+meth_order_plot <- per_meth_cat %>% ggplot()+
+  geom_col(aes(x=Clade_adj, y=percent, fill=class))+
+  xlab('')+
+  ylab('% of Clade')+
+  facet_grid(~HV, scales='free', space='free')+
+  theme_classic()+
+  theme(text=element_text(size=10), 
+        legend.title=element_blank(), 
+        axis.text.x=element_blank())
+
+per_expr_cat$HV <- factor(per_expr_cat$HV, levels=c('non-hv', 'hv'))
+expr_order_plot <- per_expr_cat %>%
+  drop_na() %>%
+  ggplot()+
+  geom_col(aes(x=Clade_adj, y=percent, fill=class))+
+  xlab('')+
+  ylab('% of Clade')+
+  facet_grid(~HV, scales='free', space='free')+
+  theme_classic()+
+  theme(text=element_text(size=10), 
+        legend.title=element_blank(), 
+        axis.text.x=element_blank())
+
+expr_order_plot + meth_order_plot + plot_layout(ncol=1)
+```
+
+
+```{r}
+hv_tile <- by_category %>% 
+  subset(select=c(accession, name, expr_category)) %>% 
+  unique() %>% 
+  merge(classified) %>%
+  filter(HV=='hv') %>%
+  group_by(expr_category, class, HV) %>%
+  summarize(n=n())%>%
+  ungroup() %>%
+  mutate(percent=n/sum(n)*100) %>%
+  mutate(label=as.character(round(percent, digits=2)))
+
+nonhv_tile <- by_category %>% 
+  subset(select=c(accession, name, expr_category)) %>% 
+  unique() %>% 
+  merge(classified) %>%
+  filter(HV=='non-hv') %>%
+  group_by(expr_category, class, HV) %>%
+  summarize(n=n())%>%
+  ungroup() %>%
+  mutate(percent=n/sum(n)*100) %>%
+  mutate(label=as.character(round(percent, digits=2)))
+
+tile <- rbind(hv_tile, nonhv_tile)
+tile[nrow(tile) + 1,] = list("constitutive","teM", 'non-hv', 0, 0.0, '0')
+
+#  mutate(percent=n/sum(n)*100) %>%
+hv_plot <- hv_tile %>%
+ggplot(aes(x=expr_category, y=class))+
+  geom_tile(aes(fill=percent))+
+  geom_text(aes(label=label)) +
+   scale_fill_gradient(low="white", high="blue")+
+  theme_classic()
+nhv_plot <- nonhv_tile %>% 
+  ggplot(aes(x=expr_category, y=class))+
+  geom_tile(aes(fill=percent))+
+  geom_text(aes(label=label)) +
+   scale_fill_gradient(low="white", high="blue")+
+  theme_classic()
+
+tile_plot <- tile %>% 
+  ggplot(aes(x=expr_category, y=class))+
+  geom_tile(aes(fill=percent))+
+  geom_text(aes(label=label)) +
+   scale_fill_gradient(low="white", high="purple")+
+  theme_classic()+
+  theme(text=element_text(size=10))+
+  xlab('Expression State')+
+  ylab('Methylation State')+
+  scale_x_discrete(labels=c('tissue_specific'='tissue specific'))+
+  facet_wrap(~HV)
+
+ggsave('C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//methylation_3.png', plot=tile_plot, dpi='retina', width=7, height=3)
+```
+```{r}
+meth_cont <- classified %>% 
+  group_by(HV, class) %>% 
+  summarize(n=n()) %>% 
+  pivot_wider(names_from=HV, values_from=n) %>% 
+  column_to_rownames('class') %>%
+  as.matrix()
+
+chisq.test(meth_cont)
+
+classified %>% 
+  group_by(HV, class) %>% 
+  summarize(n=n()) %>% 
+  ungroup() %>%
+  group_by(HV)%>%
+  mutate(percent=n/sum(n)*100)%>%
+  ggplot(aes(x=HV, y=class, fill=percent))+
+   scale_fill_gradient(low="white", high="blue")+
+  geom_tile()
+
+classified %>% 
+  group_by(HV, class) %>% 
+  summarize(n=n()) %>% 
+  ungroup() %>%
+  group_by(HV)%>%
+  mutate(percent=n/sum(n)*100)%>%
+  ggplot(aes(x=class, y=percent, fill=HV))+
+  geom_bar(position="dodge", stat="identity")+
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic()
+```
+
+
+
+```{r}
+nlr_classified <- nlr_classified %>% mutate(HV=case_match(HV, 0 ~ "non-hv", 1~"hv")) #I don't know why this takes so long.. 
+nlr_classified$HV <- factor(nlr_classified$HV, levels=c('non-hv', 'hv'))
+
+nlr_classified %>% #filter(class=='gbM')%>%
+  ggplot()+
+  introdataviz::geom_split_violin(aes(x = accession, y = CpG, fill = HV), 
+                                  alpha=0.4, trim = TRUE, scale="width")+
+  stat_summary(mapping=aes(x = accession, y = CpG, fill=HV),
+               fun = median, geom = "point", show.legend = F, shape=21, color='black',
+               position = position_dodge(.175)) +
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+ # scale_y_continuous(limits = c(0,13), expand = c(0, 0)) +
+  theme_classic(base_size = 10)+
+  ylab('CpG methylation')+
+  xlab('')+
+  facet_grid(~subpopulation, space='free', scales='free')
+```
+
+```{r}
+nlr_long <- nlr_classified %>% pivot_longer(cols=CpG:CHH, names_to='meth_context', values_to = 'percent_meth')
+
+nlr_long %>% #filter(class=='gbM')%>%
+  ggplot()+
+  introdataviz::geom_split_violin(aes(x = accession, y = percent_meth, fill = HV), 
+                                  alpha=0.4, trim = TRUE, scale="width")+
+  stat_summary(mapping=aes(x = accession, y = percent_meth, fill=HV),
+               fun = median, geom = "point", show.legend = F, shape=21, color='black',
+               position = position_dodge(.175)) +
+  scale_fill_manual(values=c('#00BFC4',  '#F8766D'))+
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+ # scale_y_continuous(limits = c(0,13), expand = c(0, 0)) +
+  theme_classic(base_size = 10)+
+  ylab('% methylation')+
+  xlab('')+
+  facet_grid(cols=vars(subpopulation), rows=vars(meth_context), space='free', scales='free')
+
+compare_means(percent_meth~HV, data=nlr_long %>% filter(accession != 'OH7B'), method='wilcox.test', paired=F, group.by=c('accession', 'meth_context'), p.adjust.method = 'BH')
+
+nlr_long %>% filter(meth_context=='CpG' & accession=='OH7B')
+```
+
+```{r}
+nlr_classified %>%
+  ggplot()+
+  geom_point(aes(x=CpG, y=CHG, color=HV), size=1) +
+  scale_color_manual(values=c('#00BFC4',  '#F8766D'))+
+  theme_classic()
+```
+
+```{r}
+gene_categories <- by_category %>% 
+  filter(tissue=='tip') %>% 
+  subset(select=c(name, expr_category, log2_TPM)) %>% 
+  merge(classified, by='name') %>% 
+  subset(select=c('accession', 'name', 'HV', 'Clade_adj', 'expr_category', 'class', 'log2_TPM', 'CpG', 'CHG'))
+
+
+gene_categories %>% filter(Clade_adj=='Rp1-like')%>%
+  ggplot(aes(x=expr_category, y=class), stat='count')+
+   scale_fill_gradient(low="white", high="blue")+
+  geom_tile()
+```
+
