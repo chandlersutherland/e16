@@ -450,3 +450,126 @@ pheatmap(RppC_m,
                  border_color=NA
          )
 ```
+
+## Supplemental Fig 3
+
+Goal: create a standard violin plot between accessions in leaf tissue
+(which tissue shows overall highest NLR expression?)
+
+``` r
+y_label <- expression('log'[2]*'(TPM)')
+
+# group non-hvNLRs for ease of color plotting, add subpopulation information for grouping, then filter to just middle leaf tissue 
+sfig3<- all_tpm_avg %>% 
+  mutate(Clade_adj2=recode(Clade_adj, 'Int3480'='Int3480', 
+                              'RppM-like'='RppM-like', 
+                              'RppC-like'='RppC-like', 
+                              'Rp1-like'='Rp1-like', 
+                            .default='non-hvNLR')) %>%
+  merge(subpopulations) %>% 
+  arrange(subpopulation) %>%
+  filter(tissue=='middle')
+
+#add sample size of #NLRs to label 
+sample_size <- sfig3 %>% 
+  group_by(accession) %>% 
+  summarize(n=n()) %>% 
+  mutate(label=paste(accession, '\nn=', as.character(n), sep='')) %>% 
+  ungroup() 
+
+#factor and order
+sfig3 <- merge(sfig3, sample_size)
+subpop_order <- sfig3 %>% arrange(subpopulation) %>% pull(label) %>% unique()
+sfig3$label <- factor(sfig3$label, levels=subpop_order)
+sfig3$Clade_adj2 <- factor(sfig3$Clade_adj2, levels=c('non-hvNLR', 'Int3480', 'RppM-like', 'RppC-like', 'Rp1-like'))
+
+#separate out tropical from the rest 
+p1 <- sfig3 %>% filter(subpopulation != 'Tropical')
+p2 <- sfig3 %>% filter(subpopulation == 'Tropical')
+```
+
+ggbeeswarm behaves poorly with faceting, so add labels manually
+
+``` r
+non_tropical <- ggplot(p1 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+ 
+  geom_violin(trim=T,
+              alpha = 0.4,
+              scale='count')+
+  geom_beeswarm(aes(color=Clade_adj2), 
+                corral='random', 
+                corral.width=0.8,
+                cex=1,
+                method='hex',
+                priority='density',
+                size=0.4)+
+  scale_color_manual(values=c('Int3480'='#fee090', 
+                              'RppM-like'='#d73027', 
+                              'RppC-like'='#fc8d59', 
+                              'Rp1-like'='#4575b4', 
+                            'non-hvNLR'='grey'))+
+  ylab(y_label)+
+  xlab('')+
+  theme(legend.title=element_blank(),
+        legend.position='none',
+        text = element_text(size=10))+
+  ylim(0,10)+
+  theme_classic() 
+
+tropical <- ggplot(p2 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+ 
+  geom_violin(trim=T,
+              alpha = 0.4,
+              scale='count')+
+  geom_beeswarm(aes(color=Clade_adj2), 
+                corral='random', 
+                corral.width = 0.8,
+                cex=1,
+                method='hex',
+                priority='density',
+                size=0.4)+
+  scale_color_manual(values=c('Int3480'='#fee090', 
+                              'RppM-like'='#d73027', 
+                              'RppC-like'='#fc8d59', 
+                              'Rp1-like'='#4575b4', 
+                            'non-hvNLR'='grey'))+
+  ylab(y_label)+
+  xlab('')+
+  theme(legend.title=element_blank(),
+        legend.position='none',
+        text = element_text(size=10))+
+  theme_classic() +
+  ylim(0,10)
+
+middle <- non_tropical + tropical + plot_layout(ncol=1, guides='collect')
+ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
+```
+
+    ## Warning: In `position_beeswarm`, method `hex` discretizes the data axis (a.k.a the
+    ## continuous or non-grouped axis).
+    ## This may result in changes to the position of the points along that axis,
+    ## proportional to the value of `cex`.
+    ## This warning is displayed once per session.
+
+    ## Warning: Removed 524 rows containing missing values (`geom_point()`).
+
+``` r
+sfig3 %>% group_by(subpopulation, accession) %>% summarize(n=n())
+```
+
+    ## `summarise()` has grouped output by 'subpopulation'. You can override using the
+    ## `.groups` argument.
+
+    ## # A tibble: 26 × 3
+    ## # Groups:   subpopulation [6]
+    ##    subpopulation   accession     n
+    ##    <fct>           <chr>     <int>
+    ##  1 Stiff stalk     B73         119
+    ##  2 Non-stiff stalk B97         125
+    ##  3 Non-stiff stalk KY21        126
+    ##  4 Non-stiff stalk M162W       121
+    ##  5 Non-stiff stalk MS71        122
+    ##  6 Non-stiff stalk OH43        130
+    ##  7 Non-stiff stalk OH7B        121
+    ##  8 Mixed           M37W        134
+    ##  9 Mixed           MO18W       117
+    ## 10 Mixed           TX303       121
+    ## # ℹ 16 more rows
