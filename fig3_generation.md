@@ -69,6 +69,10 @@ library(viridis)
 
     ## Loading required package: viridisLite
 
+``` r
+library(RColorBrewer)
+```
+
 Import and clean data
 
 ``` r
@@ -104,13 +108,7 @@ all_tpm_avg <- all_tpm %>%
     ## argument.
 
 ``` r
-#calculate significance of difference, correct by Benjamani-Hochberg 
-p_tbl <- compare_means(log2_TPM~HV, data=all_tpm_avg, group.by='tissue', p.adjust.method = 'BH') %>% arrange(p.adj)
-order_p <- p_tbl %>% pull(tissue)
-p_annot <- p_tbl %>% pull(p.signif)
-
 #clean up data for pretty plotting 
-all_tpm_avg$tissue <- factor(all_tpm_avg$tissue, levels=c(rev(order_p)))
 all_tpm_avg <- all_tpm_avg %>% mutate(HV=case_match(HV, 0 ~ "non-hv", 1~"hv")) #I don't know why this takes so long.. 
 all_tpm_avg$HV <- factor(all_tpm_avg$HV, levels=c('non-hv', 'hv'))
 ```
@@ -245,14 +243,16 @@ by_category_plot <- cat_plot  %>%
   geom_col()+
   facet_grid(~HV, scales='free', space='free')+
   ylab('% of Clade')+
-  xlab(xlabel)+
-  #labs(fill='Gene Expression Category')+
-  scale_fill_discrete(name = "Gene Expression Category", labels = c("Silent", "Tissue Specific", "Constitutive"))+
+  xlab('')+
+  scale_fill_discrete(name = "Gene Expression State:", labels = c("Silent", "Tissue Specific", "Constitutive"))+
   theme_classic()+
+  scale_y_continuous(limits = c(0,101), expand = c(0, 0)) +
   theme(axis.text.x = element_blank(),
         legend.position = 'bottom',
-        text = element_text(size=10)
-        #axis.ticks.x = element_blank()
+        text = element_text(size=10),
+        axis.ticks.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank()
         )
 
 
@@ -262,16 +262,165 @@ by_category_plot
 ![](fig3_generation_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
-ggsave(by_category_plot, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//expression_by_category.svg', width=180, height=70, units='mm')
+ggsave(by_category_plot, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//expression_by_category.svg', width=160, height=60, units='mm')
 ```
 
 ## Fig 3B: Heatmap
 
 ``` r
-#create an annotation matrix 
+#apply clade membership from geneTable
+row_annotation <- all_tpm_avg %>%
+  filter(HV=='hv') %>% 
+  subset(select=c(name, accession, Clade_adj, expr_category)) %>% 
+  unique() %>% 
+  subset(select=c(name,  
+                  expr_category, 
+                  Clade_adj
+                  )) %>% 
+  remove_rownames() %>% 
+  column_to_rownames('name')
 
-#import subpopulation membership 
-subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt', col_names=c('Assembly', 'Grin', 'accession_id', 'source', 'cross_reference', 'subpopulation', 'stock'), skip=1) %>% separate(Assembly, sep='-', into=c(NA, 'accession', NA, NA, NA))
+#get gene lists for each hv clade
+Int3480 <- row_annotation %>% filter(Clade_adj=='Int3480') %>% rownames()
+Rp1 <- row_annotation %>% filter(Clade_adj=='Rp1-like') %>% rownames()
+RppM <- row_annotation %>% filter(Clade_adj=='RppM-like') %>% rownames()
+RppC <- row_annotation %>% filter(Clade_adj=='RppC-like') %>% rownames()
+
+#remove clade name from row annotation
+row_annotation <- row_annotation %>% subset(select=c(expr_category))
+
+#create column annotations
+samples <- colnames(p)
+col_annotation <- as.data.frame(samples) %>% separate(samples, '_', into=c('tissue', NA), remove=F) %>% column_to_rownames('samples')
+
+#create color annotation list 
+my_col = list(expr_category=c('tissue_specific'='#00BA38', 
+                  'silent'= '#F8766D',
+                  'constitutive'='#619CFF'
+                  ),
+  tissue=c('anther'="#FFD92F", 
+           'base'="#E78AC3", 
+           'ear'="#FC8D62", 
+           'middle'="#E5C494", 
+           'root'="#66C2A5", 
+           'shoot'="#8DA0CB", 
+           'tassel'="#A6D854", 
+           'tip'="#B3B3B3"))
+
+#standardize mat breaks to I can create each heatmap individually 
+mat_breaks <- seq(min(p, na.rm=TRUE), max(p, na.rm=TRUE), length.out = 100)
+```
+
+``` r
+#plot! 
+Int3480_m <- p[rownames(p) %in% Int3480,]
+pheatmap(Int3480_m, 
+         cluster_cols=FALSE,
+         gaps_col=c(2, 4, 6, 8, 10, 12, 14),
+         show_rownames=FALSE,
+         show_colnames=FALSE,
+         annotation_row=row_annotation, 
+         annotation_colors=my_col, 
+         cellheight=2.5, cellwidth=10, 
+         border_color=NA,
+         legend=FALSE,
+         annotation_legend=FALSE, 
+         annotation_names_row=FALSE,
+         treeheight_row=60,
+         breaks=mat_breaks, 
+        filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//Int3480_2.png',
+        color=inferno(100))
+
+Rp1_m <- p[rownames(p) %in% Rp1,]
+pheatmap(Rp1_m, 
+         cluster_cols=FALSE, 
+         show_rownames=FALSE, 
+         show_colnames=FALSE,
+         gaps_col=c(2, 4, 6, 8, 10, 12, 14),
+         annotation_row=row_annotation, 
+         annotation_colors=my_col, 
+         cellheight=2.5, cellwidth=10, 
+         legend=FALSE,
+         annotation_legend=FALSE, 
+         annotation_names_row=FALSE,
+         border_color=NA,
+         breaks=mat_breaks, 
+         color=inferno(100),
+         filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//Rp1_2.png',
+         treeheight_row=60
+         )
+
+RppM_m <- p[rownames(p) %in% RppM,]
+pheatmap(RppM_m, 
+         cluster_cols=FALSE, 
+         show_rownames=FALSE, 
+         show_colnames=FALSE,
+         gaps_col=c(2, 4, 6, 8, 10, 12, 14),
+         annotation_row=row_annotation, 
+         annotation_colors=my_col, 
+         cellheight=2.5, cellwidth=10, 
+         legend=FALSE,
+         annotation_legend=FALSE, 
+         annotation_names_row=FALSE,
+         annotation_names_col=FALSE,
+         border_color=NA,
+         annotation_col=col_annotation, #as the leftmost plot it gets the color annotation 
+         breaks=mat_breaks, 
+         color=inferno(100), 
+        filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//RppM_2.png',
+         treeheight_row=60
+         )
+
+
+RppC_m <- p[rownames(p) %in% RppC,]
+pheatmap(RppC_m, 
+         cluster_cols=FALSE, 
+         show_rownames=FALSE, 
+         gaps_col=c(2, 4, 6, 8, 10, 12, 14),
+         annotation_row=row_annotation, 
+         annotation_colors=my_col, 
+         cellheight=2.5, cellwidth=10, 
+         legend=FALSE,
+         annotation_legend=FALSE, 
+         annotation_names_row=FALSE,
+         breaks=mat_breaks, 
+         color=inferno(100),
+         show_colnames = FALSE,
+         treeheight_row=60,
+         filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//RppC_2.png',
+         border_color=NA)
+
+#using this for the legend 
+pheatmap(RppC_m, 
+         cluster_cols=FALSE, 
+         show_rownames=FALSE, 
+         gaps_col=c(2, 4, 6, 8, 10, 12, 14),
+         annotation_row=row_annotation, 
+         annotation_colors=my_col, 
+         cellheight=2.5, cellwidth=10, 
+         legend=TRUE,
+         annotation_legend=TRUE, 
+         annotation_names_row=FALSE,
+         breaks=mat_breaks, 
+         color=inferno(100),
+         show_colnames = TRUE,
+         treeheight_row=60,
+         filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//legend.png',
+                 border_color=NA
+         )
+```
+
+## Supplemental Fig 3
+
+Goal: create a standard violin plot between accessions in leaf tissue
+(which tissue shows overall highest NLR expression?)
+
+``` r
+#import subpopulation information 
+subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt',
+                             col_names=c('Assembly', 'Grin', 'accession_id', 
+                                         'source', 'cross_reference', 'subpopulation', 'stock'), skip=1) %>%
+  separate(Assembly, sep='-', into=c(NA, 'accession', NA, NA, NA))
 ```
 
     ## 
@@ -300,163 +449,16 @@ subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland/
 subpopulations$accession <- subpopulations$accession %>% toupper()
 subpopulations <- subpopulations %>% subset(select=c('accession', 'subpopulation'))
 subpopulations[nrow(subpopulations) + 1,] = list('B73', 'Stiff stalk')
-subpopulations <- subpopulations %>% mutate(subpopulation =recode(subpopulation, 'Temporate/tropical'='Temporate/Tropical'))%>% 
-  mutate(subpopulation =recode(subpopulation, 'Temporate/Tropical'='Mixed', 'Non-stiff-stalk'='Non-stiff stalk', 'Sweet'='Sweetcorn'))
-subpopulations$subpopulation <- factor(subpopulations$subpopulation, levels=c('Stiff stalk', 'Non-stiff stalk', 'Mixed', 'Popcorn', 'Sweetcorn', 'Tropical'))
+subpopulations <- subpopulations %>% 
+  mutate(subpopulation =recode(subpopulation, 'Temporate/tropical'='Mixed', 
+                               'Non-stiff-stalk'='Non-stiff stalk', 
+                               'Sweet'='Sweetcorn'))
 
+subpopulations$subpopulation <- factor(subpopulations$subpopulation, 
+                                       levels=c('Stiff stalk', 'Non-stiff stalk', 
+                                                'Mixed', 'Popcorn', 'Sweetcorn', 'Tropical'))
 
-#apply clade membership from geneTable
-row_annotation <- all_tpm_avg %>%
-  filter(HV=='hv') %>% 
-  subset(select=c(name, accession, Clade_adj, expr_category)) %>% 
-  unique() %>% 
-  merge(subpopulations) %>% 
-  subset(select=c(name,  
-                  expr_category, 
-                  #subpopulation, 
-                  Clade_adj)) %>% 
-  remove_rownames() %>% 
-  column_to_rownames('name')
-
-#create column annotations
-samples <- colnames(p)
-col_annotation <- as.data.frame(samples) %>% separate(samples, '_', into=c('tissue', NA), remove=F) %>% column_to_rownames('samples')
-
-#create color annotation list 
-my_col = list(
-  Clade_adj=c('Int3480'='#fee090', 
-                              'RppM-like'='#d73027', 
-                              'RppC-like'='#fc8d59', 
-                              'Rp1-like'='#4575b4'), 
-  #subpopulation=c('Stiff stalk'='#ffe3a9', 
-  #                            'Non-stiff stalk'='#80d6f6', 
-  #                            'Mixed'='#d7d7d7', 
-  #                            'Popcorn'='#e6b1ff', 
-  #                            'Sweetcorn'='#ffbf70', 
-  #                            'Tropical'='#78d5a0'),
-  expr_category=c('tissue_specific'='#00BA38', 
-                  'silent'= '#F8766D',
-                  'constitutive'='#619CFF'
-                  ),
-  tissue=c('anther'='#30123BFF', 
-           'base'='#4777EFFF', 
-           'ear'='#1BD0D5FF', 
-           'middle'='#62FC6BFF', 
-           'root'='#D2E935FF', 
-           'shoot'='#FE9B2DFF', 
-           'tassel'='#DB3A07FF', 
-           'tip'='#7A0403FF'))
-
-#get gene lists for each hv clade
-Int3480 <- row_annotation %>% filter(Clade_adj=='Int3480') %>% rownames()
-Rp1 <- row_annotation %>% filter(Clade_adj=='Rp1-like') %>% rownames()
-RppM <- row_annotation %>% filter(Clade_adj=='RppM-like') %>% rownames()
-RppC <- row_annotation %>% filter(Clade_adj=='RppC-like') %>% rownames()
-
-#standardize mat breaks to I can create each heatmap individually 
-mat_breaks <- seq(min(p, na.rm=TRUE), max(p, na.rm=TRUE), length.out = 100)
-```
-
-``` r
-#plot! 
-Int3480_m <- p[rownames(p) %in% Int3480,]
-pheatmap(Int3480_m, 
-         cluster_cols=FALSE,
-         show_rownames=FALSE,
-         show_colnames=FALSE,
-         annotation_row=row_annotation, 
-         annotation_colors=my_col, 
-         cellheight=1.25, cellwidth=5, 
-         border_color=NA,
-         legend=FALSE,
-         annotation_legend=FALSE, 
-         annotation_names_row=FALSE,
-         treeheight_row=30,
-         breaks=mat_breaks, 
-        filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//Int3480_2.png',
-        color=inferno(100))
-
-Rp1_m <- p[rownames(p) %in% Rp1,]
-pheatmap(Rp1_m, 
-         cluster_cols=FALSE, 
-         show_rownames=FALSE, 
-         show_colnames=FALSE,
-         annotation_row=row_annotation, 
-         annotation_colors=my_col, 
-         cellheight=1.25, cellwidth=5, 
-         legend=FALSE,
-         annotation_legend=FALSE, 
-         annotation_names_row=FALSE,
-         border_color=NA,
-         breaks=mat_breaks, 
-         color=inferno(100),
-         filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//Rp1_2.png',
-         treeheight_row=30
-         )
-
-RppM_m <- p[rownames(p) %in% RppM,]
-pheatmap(RppM_m, 
-         cluster_cols=FALSE, 
-         show_rownames=FALSE, 
-         show_colnames=FALSE,
-         annotation_row=row_annotation, 
-         annotation_colors=my_col, 
-         cellheight=1.25, cellwidth=5, 
-         legend=FALSE,
-         annotation_legend=FALSE, 
-         annotation_names_row=FALSE,
-         annotation_names_col=FALSE,
-         border_color=NA,
-         annotation_col=col_annotation, #as the leftmost plot it gets the color annotation 
-         breaks=mat_breaks, 
-         color=inferno(100), 
-        filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//RppM_2.png',
-         treeheight_row=30
-         )
-
-
-RppC_m <- p[rownames(p) %in% RppC,]
-pheatmap(RppC_m, 
-         cluster_cols=FALSE, 
-         show_rownames=FALSE, 
-         annotation_row=row_annotation, 
-         annotation_colors=my_col, 
-         cellheight=1.25, cellwidth=5, 
-         legend=FALSE,
-         annotation_legend=FALSE, 
-         annotation_names_row=FALSE,
-         breaks=mat_breaks, 
-         color=inferno(100),
-         show_colnames = FALSE,
-         treeheight_row=30,
-         filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//RppC_2.png',
-         border_color=NA)
-
-#using this for the legend 
-pheatmap(RppC_m, 
-         cluster_cols=FALSE, 
-         show_rownames=FALSE, 
-         annotation_row=row_annotation, 
-         annotation_colors=my_col, 
-         cellheight=1.25, cellwidth=5, 
-         legend=TRUE,
-         annotation_legend=TRUE, 
-         annotation_names_row=FALSE,
-         breaks=mat_breaks, 
-         color=inferno(100),
-         show_colnames = TRUE,
-         treeheight_row=30,
-         filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//legend.png',
-                 border_color=NA
-         )
-```
-
-## Supplemental Fig 3
-
-Goal: create a standard violin plot between accessions in leaf tissue
-(which tissue shows overall highest NLR expression?)
-
-``` r
+# y axis label
 y_label <- expression('log'[2]*'(TPM)')
 
 # group non-hvNLRs for ease of color plotting, add subpopulation information for grouping, then filter to just middle leaf tissue 
@@ -506,7 +508,7 @@ non_tropical <- ggplot(p1 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
-                            'non-hvNLR'='grey'))+
+                            'non-hvNLR'='darkgrey'))+
   ylab(y_label)+
   xlab('')+
   theme(legend.title=element_blank(),
@@ -530,17 +532,16 @@ tropical <- ggplot(p2 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
-                            'non-hvNLR'='grey'))+
+                            'non-hvNLR'='darkgrey'))+
   ylab(y_label)+
   xlab('')+
   theme(legend.title=element_blank(),
         legend.position='none',
         text = element_text(size=10))+
-  theme_classic() +
-  ylim(0,10)
+  theme_classic() 
 
 middle <- non_tropical + tropical + plot_layout(ncol=1, guides='collect')
-ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
+middle
 ```
 
     ## Warning: In `position_beeswarm`, method `hex` discretizes the data axis (a.k.a the
@@ -549,9 +550,11 @@ ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//ch
     ## proportional to the value of `cex`.
     ## This warning is displayed once per session.
 
-    ## Warning: Removed 524 rows containing missing values (`geom_point()`).
+![](fig3_generation_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
+ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
+
 sfig3 %>% group_by(subpopulation, accession) %>% summarize(n=n())
 ```
 
@@ -559,7 +562,7 @@ sfig3 %>% group_by(subpopulation, accession) %>% summarize(n=n())
     ## `.groups` argument.
 
     ## # A tibble: 26 × 3
-    ## # Groups:   subpopulation [6]
+    ## # Groups:   subpopulation [7]
     ##    subpopulation   accession     n
     ##    <fct>           <chr>     <int>
     ##  1 Stiff stalk     B73         119
@@ -570,6 +573,6 @@ sfig3 %>% group_by(subpopulation, accession) %>% summarize(n=n())
     ##  6 Non-stiff stalk OH43        130
     ##  7 Non-stiff stalk OH7B        121
     ##  8 Mixed           M37W        134
-    ##  9 Mixed           MO18W       117
-    ## 10 Mixed           TX303       121
+    ##  9 Mixed           TX303       121
+    ## 10 Popcorn         HP301       116
     ## # ℹ 16 more rows
