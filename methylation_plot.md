@@ -1,25 +1,45 @@
----
-title: "methylation"
-author: "Chandler Sutherland"
-date: "2024-01-26"
-output: github_document
----
+methylation
+================
+Chandler Sutherland
+2024-01-26
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+``` r
+library(ggplot2)
 ```
 
-```{r}
-library(ggplot2)
+    ## Warning: package 'ggplot2' was built under R version 4.3.1
+
+``` r
 library(tidyverse)
+```
+
+    ## Warning: package 'purrr' was built under R version 4.3.1
+
+    ## Warning: package 'dplyr' was built under R version 4.3.1
+
+    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+    ## ✔ dplyr     1.1.3     ✔ readr     2.1.4
+    ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
+    ## ✔ lubridate 1.9.2     ✔ tibble    3.2.1
+    ## ✔ purrr     1.0.2     ✔ tidyr     1.3.0
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+``` r
 library(ggsignif)
 library(ggpubr)
 library(introdataviz)
 library(patchwork)
 ```
 
-Goal: import and compare CG methylation, CHH methylation, and CHG methylation at hv and non-hvNLRs across accessions
-```{r}
+    ## Warning: package 'patchwork' was built under R version 4.3.1
+
+Goal: import and compare CG methylation, CHH methylation, and CHG
+methylation at hv and non-hvNLRs across accessions
+
+``` r
 CpG <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CpG_meth.tsv', sep='\t') 
 CHG <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CHG_meth.tsv', sep='\t') 
 CHH <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CHH_meth.tsv', sep='\t') 
@@ -29,17 +49,32 @@ CpG_group <- CpG %>%
   group_by(name, accession) %>% 
   summarize(meth_percentage=weighted.mean(meth_percentage, count/sum(count))) %>%
   mutate(context='CpG')
+```
 
+    ## `summarise()` has grouped output by 'name'. You can override using the
+    ## `.groups` argument.
+
+``` r
 CHG_group <- CHG %>%
   group_by(name, accession) %>% 
   summarize(meth_percentage=weighted.mean(meth_percentage, count/sum(count))) %>%
   mutate(context='CHG')
+```
 
+    ## `summarise()` has grouped output by 'name'. You can override using the
+    ## `.groups` argument.
+
+``` r
 CHH_group <- CHH %>%
   group_by(name, accession) %>% 
   summarize(meth_percentage=weighted.mean(meth_percentage, count/sum(count))) %>%
   mutate(context='CHH')
+```
 
+    ## `summarise()` has grouped output by 'name'. You can override using the
+    ## `.groups` argument.
+
+``` r
 #combine to one table 
 methylation <- rbind(CpG_group, CHG_group, CHH_group)
 
@@ -47,7 +82,7 @@ methylation <- rbind(CpG_group, CHG_group, CHH_group)
 write.csv(methylation, "C:\\Users\\chand\\Box Sync\\Krasileva_Lab\\Research\\chandler\\Krasileva Lab\\E16\\intermediate_data\\percent_methylation.csv")
 ```
 
-```{r}
+``` r
 #subset to just NLRs, add clean clade info 
 gene_table <- read.csv('Maize_NLRome_GeneTable.txt', sep='\t') %>% subset(select=c('Gene', 'Ecotype', 'HV', 'Clade'))
 gene_table$Ecotype <- gene_table$Ecotype %>% toupper()
@@ -59,6 +94,31 @@ gene_table$Gene <- gene_table$Gene %>%
 
 #read in subpopulation info 
 subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt', col_names=c('Assembly', 'Grin', 'accession_id', 'source', 'cross_reference', 'subpopulation', 'stock'), skip=1) %>% separate(Assembly, sep='-', into=c(NA, 'accession', NA, NA, NA))
+```
+
+    ## 
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## cols(
+    ##   Assembly = col_character(),
+    ##   Grin = col_character(),
+    ##   accession_id = col_double(),
+    ##   source = col_character(),
+    ##   cross_reference = col_character(),
+    ##   subpopulation = col_character(),
+    ##   stock = col_character()
+    ## )
+
+    ## Warning: 25 parsing failures.
+    ## row col  expected    actual                                                                          file
+    ##   1  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   2  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   3  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   4  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   5  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ## ... ... ......... ......... .............................................................................
+    ## See problems(...) for more details.
+
+``` r
 subpopulations$accession <- subpopulations$accession %>% toupper()
 subpopulations <- subpopulations %>% subset(select=c('accession', 'subpopulation'))
 subpopulations[nrow(subpopulations) + 1,] = list('B73', 'Stiff stalk')
@@ -83,7 +143,8 @@ nlr_meth$HV <- factor(nlr_meth$HV, levels=c('non-hv', 'hv'))
 ```
 
 Test plot B73 all genes and then highlight NLRs
-```{r}
+
+``` r
 B73 <- methylation %>%
   unique() %>% 
   pivot_wider(names_from=context, values_from=meth_percentage) %>%
@@ -116,9 +177,13 @@ B73_plot +
                             'non-hvNLR'='black'))
 ```
 
+    ## Warning: Removed 13966 rows containing missing values (`geom_point()`).
 
+    ## Warning: Removed 19 rows containing missing values (`geom_point()`).
 
-```{r}
+![](methylation_plot_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+``` r
 long_methylation <- methylation %>%
   unique() %>% 
   pivot_wider(names_from=context, values_from=meth_percentage)
@@ -150,9 +215,11 @@ methylation_facet <- ggplot(long_methylation)+
 ggsave('C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//methylation_all.png', plot=methylation_facet, dpi='retina', width=8.5, height=8.5)
 ```
 
+    ## Warning: Removed 339388 rows containing missing values (`geom_point()`).
 
+    ## Warning: Removed 487 rows containing missing values (`geom_point()`).
 
-```{r}
+``` r
 subset <- c('B73', 'OH7B', 'KI3', 'CML322')
 subset_long <- long_methylation %>% filter(accession %in% subset)
 sample_size <- subset_long %>% group_by(accession) %>% summarize(n=n()) %>% 
@@ -178,6 +245,17 @@ subset_facet <- ggplot(subset_long)+
   theme(legend.position = 'none')
 
 subset_facet 
+```
 
+    ## Warning: Removed 44536 rows containing missing values (`geom_point()`).
+
+    ## Warning: Removed 61 rows containing missing values (`geom_point()`).
+
+![](methylation_plot_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
 ggsave('C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//subset_facet.png', plot=subset_facet, dpi='retina', width=150, height=50, units='mm')
 ```
+
+    ## Warning: Removed 44536 rows containing missing values (`geom_point()`).
+    ## Removed 61 rows containing missing values (`geom_point()`).
