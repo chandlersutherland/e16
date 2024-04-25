@@ -1,30 +1,58 @@
----
-title: "fig_generation"
-author: "Chandler Sutherland"
-date: "2023-11-17"
-output: github_document
----
+NLR Expression Figure
+================
+Chandler Sutherland
+2023-11-17
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Author: Chandler Sutherland Copyright (c) Chandler Sutherland Email:
+<chandlersutherland@berkeley.edu>
 
-Purpose: Generating the plots shown in Fig3 and Supplemental Figure 3
-```{r}
+Goal: Generate expression figures shown in Fig3 and Supplemental Figure
+3
+
+``` r
 library(data.table)
 library(ggplot2)
+```
+
+    ## Warning: package 'ggplot2' was built under R version 4.3.1
+
+``` r
 library(tidyverse)
+```
+
+    ## Warning: package 'purrr' was built under R version 4.3.1
+
+    ## Warning: package 'dplyr' was built under R version 4.3.1
+
+``` r
 library(ggsignif)
 library(ggpubr)
 library(ggbeeswarm)
 library(pheatmap)
+```
+
+    ## Warning: package 'pheatmap' was built under R version 4.3.1
+
+``` r
 library(patchwork)
+```
+
+    ## Warning: package 'patchwork' was built under R version 4.3.1
+
+``` r
 library(introdataviz)
 library(viridis)
+```
+
+    ## Warning: package 'viridis' was built under R version 4.3.1
+
+``` r
 library(RColorBrewer)
 ```
+
 Import and clean data
-```{r}
+
+``` r
 #remove unmappable NLRs 
 unmappable <- c('Zm00039ab351270', 'Zm00026ab135540', 'Zm00036ab418650',
                 'Zm00001eb091500', 'Zm00001eb164880', 'Zm00001eb343890',
@@ -50,14 +78,23 @@ all_tpm_avg <- all_tpm %>%
   group_by(Clade, HV, accession, tissue, name, chrom, chromStart, chromEnd, strand) %>%
   summarize(log2_TPM=mean(log2.TPM., na.rm = T)) %>%
   ungroup() 
+```
 
+    ## `summarise()` has grouped output by 'Clade', 'HV', 'accession', 'tissue',
+    ## 'name', 'chrom', 'chromStart', 'chromEnd'. You can override using the `.groups`
+    ## argument.
+
+``` r
 #clean up data for pretty plotting 
 all_tpm_avg <- all_tpm_avg %>% mutate(HV=case_match(HV, 0 ~ "non-hv", 1~"hv")) #I don't know why this takes so long.. 
 all_tpm_avg$HV <- factor(all_tpm_avg$HV, levels=c('non-hv', 'hv'))
+
+write.csv(all_tpm_avg, 'all_tpm_avg.csv')
 ```
 
-Create an expression matrix 
-```{r}
+Create an expression matrix
+
+``` r
 #reformat tpm table 
 #define a function that applies a sample ID based on the replicates
 reformat <- function(split_df){
@@ -90,11 +127,14 @@ p <- reformed %>%
                    'middle_1', 'middle_2', 'tip_1', 'tip_2'))
 ```
 
+To define the gene expression categories, we compared TPM values across
+the 10 tissues (leaf tip, leaf middle, leaf base, root, shoot, ear,
+anther, tassel, endosperm, and embryo). We defined tissue-specific
+expression as TPM ≥ 1 in at least 1 tissue and TPM \< 1 in at least 1
+tissue, constitutive expression as TPM ≥ 1 in all 10 tissues, and silent
+as TPM \< 1 in all 10 tissues.
 
-
-To define the gene expression categories, we compared TPM values across the 10 tissues (leaf tip, leaf middle, leaf base, root, shoot, ear, anther, tassel, endosperm, and embryo). We defined tissue-specific expression as TPM ≥ 1 in at least 1 tissue and TPM < 1 in at least 1 tissue, constitutive expression as TPM ≥ 1 in all 10 tissues, and silent as TPM < 1 in all 10 tissues. 
-
-```{r}
+``` r
 by_category <- all_tpm %>% 
   group_by(accession, name, tissue, HV, chrom, chromStart,chromEnd, strand) %>%
   summarize(TPM=mean(TPM, na.rm=TRUE)) %>%
@@ -114,8 +154,13 @@ by_category <- all_tpm %>%
     (
       (anther < 1) & (base < 1) & (ear < 1) & (middle < 1) & (root < 1) & (shoot < 1) & (tip < 1) & (tassel < 1)
       ) ~ 'silent'))
+```
 
+    ## `summarise()` has grouped output by 'accession', 'name', 'tissue', 'HV',
+    ## 'chrom', 'chromStart', 'chromEnd'. You can override using the `.groups`
+    ## argument.
 
+``` r
 by_category$HV <- factor(by_category$HV, levels=c('non-hv','hv'))
 
 
@@ -135,8 +180,9 @@ coordinates <- all_tpm_avg %>%
 write_csv(coordinates, file="C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//intermediate_data//nlr_coords.csv")
 ```
 
-## Fig 3A: per clade percentage category 
-```{r}
+## Fig 3A: per clade percentage category
+
+``` r
 all_tpm_avg$expr_category <- factor(all_tpm_avg$expr_category, levels=c('silent', 'tissue_specific', 'constitutive'))  
 
 cat_plot <- all_tpm_avg %>% 
@@ -148,9 +194,12 @@ cat_plot <- all_tpm_avg %>%
   mutate(rank=rank(prop)) %>%
   mutate(Clade_adj=reorder(Clade_adj, -rank)) %>%
   ungroup()
+```
 
+    ## `summarise()` has grouped output by 'HV', 'Clade_adj'. You can override using
+    ## the `.groups` argument.
 
-
+``` r
 #sample size of clades 
 sample_size <- cat_plot %>% subset(select=c(HV, Clade_adj)) %>% unique() %>% group_by(HV) %>% summarize(n=n()) %>% pull(n)
 xlabel <- paste(c('Clade\nn=',
@@ -164,8 +213,10 @@ xlabel <- paste(c('Clade\nn=',
 cat_plot %>% filter(HV=='hv') %>% pull(Clade_adj) %>% unique()
 ```
 
+    ## [1] Int3480   Rp1-like  RppC-like RppM-like
+    ## 188 Levels: Int3452_26 Int3480_75_130_R_1 ... RppC-like
 
-```{r}
+``` r
 by_category_plot <- cat_plot  %>%
   ggplot(aes(x=Clade_adj, y=prop, fill=expr_category))+
   geom_col()+
@@ -185,13 +236,17 @@ by_category_plot <- cat_plot  %>%
 
 
 by_category_plot 
+```
 
+![](fig3_expression_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
 ggsave(by_category_plot, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//expression_by_category.svg', width=160, height=60, units='mm')
 ```
 
+## Fig 3B: Heatmap
 
-## Fig 3B: Heatmap 
-```{r}
+``` r
 #apply clade membership from geneTable
 row_annotation <- all_tpm_avg %>%
   filter(HV=='hv') %>% 
@@ -235,7 +290,7 @@ my_col = list(expr_category=c('tissue_specific'='#00BA38',
 mat_breaks <- seq(min(p, na.rm=TRUE), max(p, na.rm=TRUE), length.out = 100)
 ```
 
-```{r}
+``` r
 #plot! 
 Int3480_m <- p[rownames(p) %in% Int3480,]
 pheatmap(Int3480_m, 
@@ -334,22 +389,47 @@ pheatmap(RppC_m,
          )
 ```
 
-
-
 ## Supplemental Fig 3
-Goal: create a standard violin plot between accessions in leaf tissue (which tissue shows overall highest NLR expression?)
-```{r}
+
+Goal: create a standard violin plot between accessions in leaf tissue
+
+``` r
 #import subpopulation information 
 subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt',
                              col_names=c('Assembly', 'Grin', 'accession_id', 
                                          'source', 'cross_reference', 'subpopulation', 'stock'), skip=1) %>%
   separate(Assembly, sep='-', into=c(NA, 'accession', NA, NA, NA))
+```
 
+    ## 
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## cols(
+    ##   Assembly = col_character(),
+    ##   Grin = col_character(),
+    ##   accession_id = col_double(),
+    ##   source = col_character(),
+    ##   cross_reference = col_character(),
+    ##   subpopulation = col_character(),
+    ##   stock = col_character()
+    ## )
+
+    ## Warning: 25 parsing failures.
+    ## row col  expected    actual                                                                          file
+    ##   1  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   2  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   3  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   4  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ##   5  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
+    ## ... ... ......... ......... .............................................................................
+    ## See problems(...) for more details.
+
+``` r
 subpopulations$accession <- subpopulations$accession %>% toupper()
 subpopulations <- subpopulations %>% subset(select=c('accession', 'subpopulation'))
 subpopulations[nrow(subpopulations) + 1,] = list('B73', 'Stiff stalk')
 subpopulations <- subpopulations %>% 
   mutate(subpopulation =recode(subpopulation, 'Temporate/tropical'='Mixed', 
+                               'Temporate/Tropical'='Mixed',
                                'Non-stiff-stalk'='Non-stiff stalk', 
                                'Sweet'='Sweetcorn'))
 
@@ -387,22 +467,29 @@ sfig3$Clade_adj2 <- factor(sfig3$Clade_adj2, levels=c('non-hvNLR', 'Int3480', 'R
 #separate out tropical from the rest 
 p1 <- sfig3 %>% filter(subpopulation != 'Tropical')
 p2 <- sfig3 %>% filter(subpopulation == 'Tropical')
+
+seventy_five <- sfig3 %>% pull(log2_TPM) %>% quantile(c(0.75))
 ```
 
-ggbeeswarm behaves poorly with faceting, so add labels manually 
-```{r}
+ggbeeswarm behaves poorly with faceting, so add labels manually
+
+``` r
 non_tropical <- ggplot(p1 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+ 
   geom_violin(trim=T,
-              alpha = 0.4,
-              scale='count')+
+            #  alpha = 0.4,
+              scale='count' , 
+            #  draw_quantiles = c(0.5)
+           )+
+  geom_hline(aes(yintercept=seventy_five), linetype=2)+
   geom_beeswarm(aes(color=Clade_adj2), 
                 corral='random', 
                 corral.width=0.8,
                 cex=1,
                 method='hex',
                 priority='density',
+                alpha=0.75,
                 size=0.4)+
-  scale_color_manual(values=c('Int3480'='#fee090', 
+  scale_color_manual(values=c('Int3480'='#662d91', 
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
@@ -412,26 +499,30 @@ non_tropical <- ggplot(p1 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+
   theme(legend.title=element_blank(),
         legend.position='none',
         text = element_text(size=10))+
-  ylim(0,10)+
+  ylim(-0.01,10)+
   theme_classic() 
 
 tropical <- ggplot(p2 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+ 
   geom_violin(trim=T,
-              alpha = 0.4,
-              scale='count')+
+             # alpha = 0.4,
+              scale='count', 
+              draw_quantiles = c(0.5))+
+    geom_hline(aes(yintercept=seventy_five), linetype=2)+
   geom_beeswarm(aes(color=Clade_adj2), 
                 corral='random', 
                 corral.width = 0.8,
                 cex=1,
                 method='hex',
                 priority='density',
+                alpha=0.75,
                 size=0.4)+
-  scale_color_manual(values=c('Int3480'='#fee090', 
+  scale_color_manual(values=c('Int3480'='#662d91', 
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
                             'non-hvNLR'='darkgrey'))+
   ylab(y_label)+
+  ylim(-.01,10)+
   xlab('')+
   theme(legend.title=element_blank(),
         legend.position='none',
@@ -439,9 +530,22 @@ tropical <- ggplot(p2 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+
   theme_classic() 
 
 middle <- non_tropical + tropical + plot_layout(ncol=1, guides='collect')
-middle
-ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
 
-sfig3 %>% group_by(subpopulation, accession) %>% summarize(n=n())
+middle
 ```
 
+    ## Warning: In `position_beeswarm`, method `hex` discretizes the data axis (a.k.a the
+    ## continuous or non-grouped axis).
+    ## This may result in changes to the position of the points along that axis,
+    ## proportional to the value of `cex`.
+    ## This warning is displayed once per session.
+
+    ## Warning: Removed 524 rows containing missing values (`geom_point()`).
+
+![](fig3_expression_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
+ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
+```
+
+    ## Warning: Removed 524 rows containing missing values (`geom_point()`).
