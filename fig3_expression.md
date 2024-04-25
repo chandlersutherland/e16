@@ -12,41 +12,14 @@ Goal: Generate expression figures shown in Fig3 and Supplemental Figure
 ``` r
 library(data.table)
 library(ggplot2)
-```
-
-    ## Warning: package 'ggplot2' was built under R version 4.3.1
-
-``` r
 library(tidyverse)
-```
-
-    ## Warning: package 'purrr' was built under R version 4.3.1
-
-    ## Warning: package 'dplyr' was built under R version 4.3.1
-
-``` r
 library(ggsignif)
 library(ggpubr)
 library(ggbeeswarm)
 library(pheatmap)
-```
-
-    ## Warning: package 'pheatmap' was built under R version 4.3.1
-
-``` r
 library(patchwork)
-```
-
-    ## Warning: package 'patchwork' was built under R version 4.3.1
-
-``` r
 library(introdataviz)
 library(viridis)
-```
-
-    ## Warning: package 'viridis' was built under R version 4.3.1
-
-``` r
 library(RColorBrewer)
 ```
 
@@ -238,7 +211,7 @@ by_category_plot <- cat_plot  %>%
 by_category_plot 
 ```
 
-![](fig3_expression_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](fig3_expression_files/figure-gfm/Fig3a-1.png)<!-- -->
 
 ``` r
 ggsave(by_category_plot, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//expression_by_category.svg', width=160, height=60, units='mm')
@@ -395,7 +368,7 @@ Goal: create a standard violin plot between accessions in leaf tissue
 
 ``` r
 #import subpopulation information 
-subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt',
+subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland//e16//download//nam_genome_info.txt',
                              col_names=c('Assembly', 'Grin', 'accession_id', 
                                          'source', 'cross_reference', 'subpopulation', 'stock'), skip=1) %>%
   separate(Assembly, sep='-', into=c(NA, 'accession', NA, NA, NA))
@@ -414,13 +387,13 @@ subpopulations <- read_table('//wsl.localhost//Ubuntu//home//chandlersutherland/
     ## )
 
     ## Warning: 25 parsing failures.
-    ## row col  expected    actual                                                                          file
-    ##   1  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
-    ##   2  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
-    ##   3  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
-    ##   4  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
-    ##   5  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//nam_genome_info.txt'
-    ## ... ... ......... ......... .............................................................................
+    ## row col  expected    actual                                                                                    file
+    ##   1  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//download//nam_genome_info.txt'
+    ##   2  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//download//nam_genome_info.txt'
+    ##   3  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//download//nam_genome_info.txt'
+    ##   4  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//download//nam_genome_info.txt'
+    ##   5  -- 7 columns 8 columns '//wsl.localhost//Ubuntu//home//chandlersutherland//e16//download//nam_genome_info.txt'
+    ## ... ... ......... ......... .......................................................................................
     ## See problems(...) for more details.
 
 ``` r
@@ -542,7 +515,7 @@ middle
 
     ## Warning: Removed 524 rows containing missing values (`geom_point()`).
 
-![](fig3_expression_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](fig3_expression_files/figure-gfm/SuppFig3-1.png)<!-- -->
 
 ``` r
 ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
