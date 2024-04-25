@@ -1,43 +1,25 @@
-methylation
+fig3_methylation
 ================
 Chandler Sutherland
 2024-01-26
 
+Author: Chandler Sutherland Copyright (c) Chandler Sutherland Email:
+<chandlersutherland@berkeley.edu>
+
+Goal: Generate methylation figures shown in Fig3 and Supplemental Figure
+4
+
 ``` r
 library(ggplot2)
-```
-
-    ## Warning: package 'ggplot2' was built under R version 4.3.1
-
-``` r
 library(tidyverse)
-```
-
-    ## Warning: package 'purrr' was built under R version 4.3.1
-
-    ## Warning: package 'dplyr' was built under R version 4.3.1
-
-    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-    ## ✔ dplyr     1.1.3     ✔ readr     2.1.4
-    ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-    ## ✔ lubridate 1.9.2     ✔ tibble    3.2.1
-    ## ✔ purrr     1.0.2     ✔ tidyr     1.3.0
-    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ dplyr::filter() masks stats::filter()
-    ## ✖ dplyr::lag()    masks stats::lag()
-    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
-
-``` r
 library(ggsignif)
 library(ggpubr)
 library(introdataviz)
+library(pheatmap)
 library(patchwork)
 ```
 
-    ## Warning: package 'patchwork' was built under R version 4.3.1
-
-Goal: import and compare CG methylation, CHH methylation, and CHG
-methylation at hv and non-hvNLRs across accessions
+Import all gene methylation data, clean
 
 ``` r
 CpG <- read.csv('//wsl.localhost//Ubuntu//home//chandlersutherland//e16_scratch//CpG_meth.tsv', sep='\t') 
@@ -140,6 +122,9 @@ nlr_meth <- nlr_meth %>% mutate(HV=case_match(HV, 0 ~ 'non-hv',
                                   1 ~ 'hv'))
 
 nlr_meth$HV <- factor(nlr_meth$HV, levels=c('non-hv', 'hv'))
+
+
+write.csv(nlr_meth, "C:\\Users\\chand\\Box Sync\\Krasileva_Lab\\Research\\chandler\\Krasileva Lab\\E16\\intermediate_data\\nlr_methylation.csv")
 ```
 
 Test plot B73 all genes and then highlight NLRs
@@ -170,7 +155,7 @@ B73_plot <- B73 %>%
 
 B73_plot + 
   geom_point(data=B73_nlr, aes(x=CpG, y=CHG, color=Clade_adj2))+
-  scale_color_manual(values=c('Int3480'='#fee090', 
+  scale_color_manual(values=c('Int3480'='#662d91', 
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
@@ -181,7 +166,7 @@ B73_plot +
 
     ## Warning: Removed 19 rows containing missing values (`geom_point()`).
 
-![](methylation_plot_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](methylation_plot_files/figure-gfm/B73-1.png)<!-- -->
 
 ``` r
 long_methylation <- methylation %>%
@@ -201,7 +186,7 @@ long_nlr$Clade_adj2 <- factor(long_nlr$Clade_adj2, levels=c('non-hvNLR', 'Int348
 methylation_facet <- ggplot(long_methylation)+
   geom_point(aes(x=CpG, y=CHG), alpha=0.3, size=0.6, color='grey')+
   geom_point(data=long_nlr, aes(x=CpG, y=CHG, color=Clade_adj2), size=0.6)+
-  scale_color_manual(values=c('Int3480'='#fee090', 
+  scale_color_manual(values=c('Int3480'='#662d91', 
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
@@ -209,6 +194,8 @@ methylation_facet <- ggplot(long_methylation)+
   ylim(0,100)+
   xlim(0,100)+
   theme_classic()+
+  xlab('%CG Methylation')+
+  ylab('%CHG Methylation')+
   facet_wrap(~accession)+
   theme(legend.position = 'none')
 
@@ -231,7 +218,7 @@ subset_long <- subset_long %>% merge(sample_size)
 subset_facet <- ggplot(subset_long)+
   geom_point(aes(x=CpG, y=CHG), alpha=0.3, size=0.6, color='grey')+
   geom_point(data=(long_nlr %>% filter(accession %in% subset)), aes(x=CpG, y=CHG, color=Clade_adj2), size=0.6)+
-  scale_color_manual(values=c('Int3480'='#fee090', 
+  scale_color_manual(values=c('Int3480'='#662d91', 
                               'RppM-like'='#d73027', 
                               'RppC-like'='#fc8d59', 
                               'Rp1-like'='#4575b4', 
@@ -251,7 +238,7 @@ subset_facet
 
     ## Warning: Removed 61 rows containing missing values (`geom_point()`).
 
-![](methylation_plot_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](methylation_plot_files/figure-gfm/Fig3C-1.png)<!-- -->
 
 ``` r
 ggsave('C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//subset_facet.png', plot=subset_facet, dpi='retina', width=150, height=50, units='mm')
