@@ -18,7 +18,7 @@ library(ggpubr)
 library(ggbeeswarm)
 library(pheatmap)
 library(patchwork)
-library(introdataviz)
+#library(introdataviz)
 library(viridis)
 library(RColorBrewer)
 ```
@@ -26,6 +26,7 @@ library(RColorBrewer)
 Import and clean data
 
 ``` r
+setwd("C:/Users/chand/Documents/R/e16")
 #remove unmappable NLRs 
 unmappable <- c('Zm00039ab351270', 'Zm00026ab135540', 'Zm00036ab418650',
                 'Zm00001eb091500', 'Zm00001eb164880', 'Zm00001eb343890',
@@ -33,7 +34,7 @@ unmappable <- c('Zm00039ab351270', 'Zm00026ab135540', 'Zm00036ab418650',
                 'Zm00001eb405930', 'Zm00033ab429000', 'Zm00029ab367660')
 
 #import gene information 
-gene_table <- read.csv('Maize_NLRome_GeneTable.txt', sep='\t') %>% subset(select=c('Gene', 'Ecotype', 'HV', 'Clade'))
+gene_table <- read.csv('C:/Users/chand/Documents/R/e16/Maize_NLRome_GeneTable.txt', sep='\t') %>% subset(select=c('Gene', 'Ecotype', 'HV', 'Clade'))
 gene_table$Ecotype <- gene_table$Ecotype %>% toupper()
 gene_table$Gene <- gene_table$Gene %>% 
   str_replace('ZM', 'Zm') %>% 
@@ -479,7 +480,8 @@ tropical <- ggplot(p2 %>% arrange(Clade_adj2), aes(x=label, y=log2_TPM))+
   geom_violin(trim=T,
              # alpha = 0.4,
               scale='count', 
-              draw_quantiles = c(0.5))+
+             # draw_quantiles = c(0.5)
+             )+
     geom_hline(aes(yintercept=seventy_five), linetype=2)+
   geom_beeswarm(aes(color=Clade_adj2), 
                 corral='random', 
@@ -513,7 +515,8 @@ middle
     ## proportional to the value of `cex`.
     ## This warning is displayed once per session.
 
-    ## Warning: Removed 524 rows containing missing values (`geom_point()`).
+    ## Warning: Removed 524 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
 
 ![](fig3_expression_files/figure-gfm/SuppFig3-1.png)<!-- -->
 
@@ -521,4 +524,5 @@ middle
 ggsave(middle, filename='C://Users//chand//Box Sync//Krasileva_Lab//Research//chandler//Krasileva Lab//E16//figure panels//middle.png', width=250, height=150, units='mm')
 ```
 
-    ## Warning: Removed 524 rows containing missing values (`geom_point()`).
+    ## Warning: Removed 524 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
